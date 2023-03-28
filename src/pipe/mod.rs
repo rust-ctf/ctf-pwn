@@ -1,4 +1,5 @@
 pub(crate) mod read;
+pub(crate) mod write;
 
 use std::collections::VecDeque;
 use std::io::{Read, Write};
