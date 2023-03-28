@@ -1,7 +1,4 @@
-use std::{
-    fmt::Write,
-    io::{Read, Result},
-};
+use std::io::{Read, Result};
 
 use super::Pipe;
 
@@ -48,8 +45,7 @@ where
     }
 
     fn read_until_wait_internal(&mut self, end: &[u8], wait: bool) -> Option<Vec<u8>> {
-        if end.len() == 0
-        {
+        if end.len() == 0 {
             return None;
         }
         let mut result = Vec::new();
@@ -190,6 +186,20 @@ mod tests {
     }
 
     #[test]
+    fn read_until_large_twice() {
+        let mut data = [1u8; 1000];
+        data[5..10].copy_from_slice(b"match");
+        data[900..905].copy_from_slice(b"match");
+        let mut stream = stream_from_bytes(&data);
+        let result = stream.read_until(b"match");
+        assert_eq!(result.unwrap(), [1u8; 5]);
+        let result = stream.read_until(b"match");
+        assert_eq!(result.unwrap(), [1u8; 890]);
+        let result = stream.read_all();
+        assert_eq!(result, [1u8; 95]);
+    }
+
+    #[test]
     fn read_until_mid_buffer() {
         let mut data = [1u8; 1000];
         data[(super::BUFFER_SIZE - 3)..(super::BUFFER_SIZE + 2)].copy_from_slice(b"match");
@@ -198,5 +208,105 @@ mod tests {
         assert_eq!(result.unwrap(), [1u8; (super::BUFFER_SIZE - 3)]);
         let result = stream.read_all();
         assert_eq!(result, [1u8; (1000 - super::BUFFER_SIZE - 2)]);
+    }
+
+    #[test]
+    fn read_until_mid_buffer_twice() {
+        let mut data = [1u8; 1000];
+        data[5..10].copy_from_slice(b"match");
+        data[(super::BUFFER_SIZE - 3)..(super::BUFFER_SIZE + 2)].copy_from_slice(b"match");
+        let mut stream = stream_from_bytes(&data);
+        let result = stream.read_until(b"match");
+        assert_eq!(result.unwrap(), [1u8; 5]);
+        let result = stream.read_until(b"match");
+        assert_eq!(result.unwrap(), [1u8; (super::BUFFER_SIZE - 3 - 10)]);
+        let result = stream.read_all();
+        assert_eq!(result, [1u8; 1000 - super::BUFFER_SIZE - 2]);
+    }
+
+    #[test]
+    fn read_until_wait() {
+        let mut stream = stream_from_bytes(b"Test stream match");
+        let result = stream.read_until_wait(b"match");
+        assert_eq!(result.unwrap(), b"Test stream ");
+    }
+
+    #[test]
+    fn read_until_left_wait() {
+        let mut stream = stream_from_bytes(b"Test stream match This is after");
+        let result = stream.read_until_wait(b"match");
+        assert_eq!(result.unwrap(), b"Test stream ");
+        let result = stream.read_all();
+        assert_eq!(result, b" This is after");
+    }
+
+    #[test]
+    fn read_until_twice_wait() {
+        let mut stream = stream_from_bytes(b"Test stream match Test stream 2 match");
+        let result = stream.read_until_wait(b"match");
+        assert_eq!(result.unwrap(), b"Test stream ");
+        let result = stream.read_until_wait(b"match");
+        assert_eq!(result.unwrap(), b" Test stream 2 ");
+    }
+
+    #[test]
+    fn read_until_large_wait() {
+        let mut data = [1u8; 1000];
+        data[5..10].copy_from_slice(b"match");
+        let mut stream = stream_from_bytes(&data);
+        let result = stream.read_until_wait(b"match");
+        assert_eq!(result.unwrap(), [1u8; 5]);
+        let result = stream.read_all();
+        assert_eq!(result, [1u8; 990]);
+    }
+
+    #[test]
+    fn read_until_large2_wait() {
+        let mut data = [1u8; 1000];
+        data[900..905].copy_from_slice(b"match");
+        let mut stream = stream_from_bytes(&data);
+        let result = stream.read_until_wait(b"match");
+        assert_eq!(result.unwrap(), [1u8; 900]);
+        let result = stream.read_all();
+        assert_eq!(result, [1u8; 95]);
+    }
+
+    #[test]
+    fn read_until_large_twice_wait() {
+        let mut data = [1u8; 1000];
+        data[5..10].copy_from_slice(b"match");
+        data[900..905].copy_from_slice(b"match");
+        let mut stream = stream_from_bytes(&data);
+        let result = stream.read_until_wait(b"match");
+        assert_eq!(result.unwrap(), [1u8; 5]);
+        let result = stream.read_until_wait(b"match");
+        assert_eq!(result.unwrap(), [1u8; 890]);
+        let result = stream.read_all();
+        assert_eq!(result, [1u8; 95]);
+    }
+
+    #[test]
+    fn read_until_mid_buffer_wait() {
+        let mut data = [1u8; 1000];
+        data[(super::BUFFER_SIZE - 3)..(super::BUFFER_SIZE + 2)].copy_from_slice(b"match");
+        let mut stream = stream_from_bytes(&data);
+        let result = stream.read_until_wait(b"match");
+        assert_eq!(result.unwrap(), [1u8; (super::BUFFER_SIZE - 3)]);
+        let result = stream.read_all();
+        assert_eq!(result, [1u8; (1000 - super::BUFFER_SIZE - 2)]);
+    }
+
+    #[test]
+    fn read_until_mid_buffer_twice_wait() {
+        let mut data = [1u8; 1000];
+        data[5..10].copy_from_slice(b"match");
+        data[(super::BUFFER_SIZE - 3)..(super::BUFFER_SIZE + 2)].copy_from_slice(b"match");
+        let mut stream = stream_from_bytes(&data);
+        let result = stream.read_until_wait(b"match");
+        assert_eq!(result.unwrap(), [1u8; 5]);
+        let result = stream.read_until_wait(b"match");
+        assert_eq!(result.unwrap(), [1u8; (super::BUFFER_SIZE - 3 - 10)]);
+        let result = stream.read_all();
+        assert_eq!(result, [1u8; 1000 - super::BUFFER_SIZE - 2]);
     }
 }
