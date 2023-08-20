@@ -1,9 +1,11 @@
 pub(crate) mod interactive;
+pub(crate) mod numeric;
 pub(crate) mod read;
 pub(crate) mod write;
 
 pub use crossterm::event::KeyCode;
 pub use interactive::*;
+pub use numeric::*;
 pub use read::*;
 pub use write::*;
 

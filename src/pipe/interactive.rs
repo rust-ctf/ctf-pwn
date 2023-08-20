@@ -1,11 +1,8 @@
 use crossterm::{
-    cursor,
     event::{self, KeyCode, KeyEvent, KeyEventKind, KeyModifiers},
-    terminal::{self, ClearType},
-    ExecutableCommand,
+    terminal::{self},
 };
 use std::io::Write;
-use std::time::Duration;
 use std::{
     io::{self, BufRead},
     sync::mpsc::{self, Sender},
@@ -22,7 +19,7 @@ enum ShellCommand {
 
 impl<T> Pipe<T>
 where
-    T: Write + Read
+    T: Write + Read,
 {
     fn shell_line_sender(sender: Sender<ShellCommand>) -> JoinHandle<()> {
         thread::spawn(move || {
