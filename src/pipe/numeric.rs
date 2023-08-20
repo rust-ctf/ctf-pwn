@@ -13,8 +13,8 @@ where
 {
     pub fn write_be<D: PrimInt + AsPrimitive<usize>>(&mut self, data: D) -> Result<usize> {
         let size = size_of::<D>();
-        if size == 1 {
-            self.stream.write(&[data.as_() as u8])
+        let result = if size == 1 {
+            self.stream.write(&[data.as_() as u8])?
         } else {
             let mut n = data;
             let ff = D::from(0xFF).unwrap();
@@ -24,14 +24,16 @@ where
                 bytes[i] = b;
                 n = n.rotate_right(8);
             }
-            self.stream.write(&bytes)
-        }
+            self.stream.write(&bytes)?
+        };
+        self.stream.flush()?;
+        Ok(result)
     }
 
     pub fn write_le<D: PrimInt + AsPrimitive<usize>>(&mut self, data: D) -> Result<usize> {
         let size = size_of::<D>();
-        if size == 1 {
-            self.stream.write(&[data.as_() as u8])
+        let result = if size == 1 {
+            self.stream.write(&[data.as_() as u8])?
         } else {
             let mut n = data;
             let ff = D::from(0xFF).unwrap();
@@ -41,7 +43,9 @@ where
                 bytes[i] = b;
                 n = n.rotate_right(8);
             }
-            self.stream.write(&bytes)
-        }
+            self.stream.write(&bytes)?
+        };
+        self.stream.flush()?;
+        Ok(result)
     }
 }
