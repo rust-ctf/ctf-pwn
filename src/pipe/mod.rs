@@ -1,5 +1,11 @@
+pub(crate) mod interactive;
 pub(crate) mod read;
 pub(crate) mod write;
+
+pub use crossterm::event::KeyCode;
+pub use interactive::*;
+pub use read::*;
+pub use write::*;
 
 use std::collections::VecDeque;
 use std::io::{Read, Write};
