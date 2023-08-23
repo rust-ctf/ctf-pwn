@@ -9,3 +9,7 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+duct = "0.13.6"
+paste = "1.0.14"
+thiserror = "1.0.47"
+tokio = { version = "1.32.0", features = ["full"] }
