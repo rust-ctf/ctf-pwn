@@ -7,11 +7,7 @@ use tokio::{
 
 type TcpStreamPipe = Pipe<OwnedReadHalf, OwnedWriteHalf>;
 
-impl<R, W> Pipe<R, W>
-where
-    R: AsyncRead,
-    W: AsyncWrite,
-{
+impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
     pub async fn connect<A: ToSocketAddrs>(addr: A) -> Result<TcpStreamPipe> {
         let stream = TcpStream::connect(addr).await?;
         Ok(stream.into())

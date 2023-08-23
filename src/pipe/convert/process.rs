@@ -22,11 +22,7 @@ type ProcessPipe = Pipe<MergedOutput2<ChildStdout, ChildStderr>, ChildStdin>;
 type StdoutPipe = Pipe<ChildStdout, ChildStdin>;
 type StderrPipe = Pipe<ChildStderr, ChildStdin>;
 
-impl<R, W> Pipe<R, W>
-where
-    R: AsyncRead,
-    W: AsyncWrite,
-{
+impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
     pub async fn from_app<S: AsRef<OsStr>>(program: S) -> Result<ProcessPipe> {
         let command = Command::new(program);
         Self::spawn_command(command)

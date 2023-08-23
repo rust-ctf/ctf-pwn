@@ -11,12 +11,12 @@ use tokio::{io::*, sync::Mutex};
 pub const DEFAULT_READ_TIMEOUT: Duration = Duration::from_secs(1);
 pub const DEFAULT_WRITE_TIMEOUT: Duration = Duration::from_secs(1);
 
-pub struct Pipe<R: AsyncRead, W: AsyncWrite> {
+pub struct Pipe<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> {
     read_stream: Mutex<TimedBufReader<R>>,
     write_stream: Mutex<TimedBufWriter<W>>,
 }
 
-impl<R: AsyncRead, W: AsyncWrite> Pipe<R, W> {
+impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
     pub fn new(read_stream: R, write_stream: W) -> Pipe<R, W> {
         Self::from_buf(BufReader::new(read_stream), BufWriter::new(write_stream))
     }
