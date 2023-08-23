@@ -3,9 +3,9 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
 
+use std::future::Future;
 use tokio::io::{AsyncWrite, AsyncWriteExt, BufWriter};
 use tokio::time::{timeout_at, Instant};
-use std::future::Future;
 
 pub struct TimedBufWriter<W: AsyncWrite> {
     writer: BufWriter<W>,
@@ -21,19 +21,14 @@ impl<W: AsyncWrite> TimedBufWriter<W> {
     }
 
     pub fn from_buf(writer: BufWriter<W>, timeout: Duration) -> Self {
-        TimedBufWriter {
-            writer,
-            timeout,
-        }
+        TimedBufWriter { writer, timeout }
     }
 
-    pub fn get_timeout(&self) -> Duration
-    {
+    pub fn get_timeout(&self) -> Duration {
         self.timeout
     }
 
-    pub fn set_timeout(&mut self, timeout: Duration)
-    {
+    pub fn set_timeout(&mut self, timeout: Duration) {
         self.timeout = timeout;
     }
 }
@@ -52,24 +47,19 @@ impl<W: AsyncWrite + Unpin> AsyncWrite for TimedBufWriter<W> {
         match timeout_future.as_mut().poll(cx) {
             Poll::Ready(Ok(Ok(result))) => Poll::Ready(Ok(result)),
             Poll::Ready(Ok(Err(e))) => Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e))),
-            Poll::Ready(Err(_)) => {
-                Poll::Ready(Err(io::Error::new(io::ErrorKind::TimedOut, "write operation timed out")))
-            }
+            Poll::Ready(Err(_)) => Poll::Ready(Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "write operation timed out",
+            ))),
             Poll::Pending => Poll::Pending,
         }
     }
 
-    fn poll_flush(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<io::Result<()>> {
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         Pin::new(&mut self.writer).poll_flush(cx)
     }
 
-    fn poll_shutdown(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<io::Result<()>> {
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         Pin::new(&mut self.writer).poll_shutdown(cx)
     }
 }
