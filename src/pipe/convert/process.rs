@@ -2,7 +2,7 @@ use super::*;
 
 use std::{ffi::OsStr, process::Stdio, result};
 use thiserror::*;
-use tokio::{io::*, process::*};
+use tokio::process::*;
 
 #[derive(Error, Debug)]
 pub enum ProcessPipeError {
@@ -18,12 +18,13 @@ pub enum ProcessPipeError {
 
 pub type Result<T> = result::Result<T, ProcessPipeError>;
 
-type ProcessPipe = Pipe<MergedOutput2<ChildStdout, ChildStderr>, ChildStdin>;
-type StdoutPipe = Pipe<ChildStdout, ChildStdin>;
-type StderrPipe = Pipe<ChildStderr, ChildStdin>;
+pub type ProcessPipe = Pipe<MergedOutput2<ChildStdout, ChildStderr>, ChildStdin>;
+pub type StdoutPipe = Pipe<ChildStdout, ChildStdin>;
+pub type StderrPipe = Pipe<ChildStderr, ChildStdin>;
 
-impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
-    pub async fn from_app<S: AsRef<OsStr>>(program: S) -> Result<ProcessPipe> {
+impl ProcessPipe
+{
+    pub async fn from_app<S: AsRef<OsStr>>(program: S) -> Result<Self> {
         let command = Command::new(program);
         Self::spawn_command(command)
     }
@@ -31,60 +32,72 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
     pub async fn from_app_args<S: AsRef<OsStr>, I: IntoIterator<Item = S>>(
         program: S,
         args: I,
-    ) -> Result<ProcessPipe> {
+    ) -> Result<Self> {
         let mut command = Command::new(program);
         let _ = command.args(args);
         Self::spawn_command(command)
     }
 
-    pub fn spawn_command(mut value: Command) -> Result<ProcessPipe> {
+    pub fn spawn_command(mut value: Command) -> Result<Self> {
         let process = value
             .stdout(Stdio::piped())
             .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
             .spawn()?;
 
         process.try_into()
     }
+}
 
-    pub async fn from_app_stdout<S: AsRef<OsStr>>(program: S) -> Result<StdoutPipe> {
+impl StdoutPipe
+{
+    pub async fn from_app<S: AsRef<OsStr>>(program: S) -> Result<Self> {
         let command = Command::new(program);
-        Self::spawn_command_stdout(command)
+        Self::spawn_command(command)
     }
 
-    pub async fn from_app_args_stdout<S: AsRef<OsStr>, I: IntoIterator<Item = S>>(
+    pub async fn from_app_args<S: AsRef<OsStr>, I: IntoIterator<Item = S>>(
         program: S,
         args: I,
-    ) -> Result<StdoutPipe> {
+    ) -> Result<Self> {
         let mut command = Command::new(program);
         let _ = command.args(args);
-        Self::spawn_command_stdout(command)
+        Self::spawn_command(command)
     }
 
-    pub fn spawn_command_stdout(mut value: Command) -> Result<StdoutPipe> {
-        let process = value.stdout(Stdio::piped()).stdin(Stdio::piped()).spawn()?;
+    pub fn spawn_command(mut value: Command) -> Result<Self> {
+        let process = value
+            .stdout(Stdio::piped())
+            .stdin(Stdio::piped())
+            .spawn()?;
 
         let stdin = process.stdin.ok_or(ProcessPipeError::StdinNotSet)?;
         let stdout = process.stdout.ok_or(ProcessPipeError::StdoutNotSet)?;
         Ok((stdin, stdout).into())
     }
+}
 
-    pub async fn from_app_stderr<S: AsRef<OsStr>>(program: S) -> Result<StderrPipe> {
+impl StderrPipe
+{
+    pub async fn from_app<S: AsRef<OsStr>>(program: S) -> Result<Self> {
         let command = Command::new(program);
-        Self::spawn_command_stderr(command)
+        Self::spawn_command(command)
     }
 
-    pub async fn from_app_args_stderr<S: AsRef<OsStr>, I: IntoIterator<Item = S>>(
+    pub async fn from_app_args<S: AsRef<OsStr>, I: IntoIterator<Item = S>>(
         program: S,
         args: I,
-    ) -> Result<StderrPipe> {
+    ) -> Result<Self> {
         let mut command = Command::new(program);
         let _ = command.args(args);
-        Self::spawn_command_stderr(command)
+        Self::spawn_command(command)
     }
 
-    pub fn spawn_command_stderr(mut value: Command) -> Result<StderrPipe> {
-        let process = value.stderr(Stdio::piped()).stdin(Stdio::piped()).spawn()?;
+    pub fn spawn_command(mut value: Command) -> Result<Self> {
+        let process = value
+            .stderr(Stdio::piped())
+            .stdin(Stdio::piped())
+            .spawn()?;
 
         let stdin = process.stdin.ok_or(ProcessPipeError::StdinNotSet)?;
         let stderr = process.stderr.ok_or(ProcessPipeError::StdErrNotSet)?;

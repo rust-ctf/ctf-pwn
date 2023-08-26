@@ -5,6 +5,7 @@ use std::time::Duration;
 use tokio::{io::*, sync::Mutex};
 
 pub use io::*;
+pub use convert::*;
 
 
 pub const DEFAULT_READ_TIMEOUT: Duration = Duration::from_secs(1);
