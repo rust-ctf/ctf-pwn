@@ -4,26 +4,23 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use std::future::Future;
-use tokio::io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf};
+use tokio::io::{AsyncRead, AsyncReadExt, ReadBuf};
 use tokio::time::{timeout_at, Instant};
 
+use crate::RollbackReader;
+
 pub struct TimedBufReader<R: AsyncRead> {
-    reader: BufReader<R>,
+    reader: RollbackReader<R>,
     timeout: Duration,
 }
 
-impl<R: AsyncRead> TimedBufReader<R> {
+impl<R: AsyncRead + Unpin> TimedBufReader<R> {
     pub fn new(inner: R, timeout: Duration) -> Self {
         TimedBufReader {
-            reader: BufReader::new(inner),
+            reader: RollbackReader::new(inner),
             timeout,
         }
     }
-
-    pub fn from_buf(reader: BufReader<R>, timeout: Duration) -> Self {
-        TimedBufReader { reader, timeout }
-    }
-
     pub fn get_timeout(&self) -> Duration {
         self.timeout
     }

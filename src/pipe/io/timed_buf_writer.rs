@@ -1,4 +1,3 @@
-use std::any::{Any, TypeId};
 use std::io;
 use std::pin::Pin;
 use std::task::{Context, Poll};
