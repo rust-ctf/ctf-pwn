@@ -1,9 +1,8 @@
 use std::result;
-
 use super::*;
 use bytes::BufMut;
 use thiserror::*;
-use tokio::{io::*, time::error::Elapsed};
+use tokio::{io::*, time::error::Elapsed, task::JoinError};
 
 #[derive(Error, Debug)]
 pub enum PipeReadError {
@@ -11,6 +10,8 @@ pub enum PipeReadError {
     IoError(#[from] std::io::Error),
     #[error("timeout error")]
     TimeoutError(#[from] Elapsed),
+    #[error("thread error")]
+    ThreadError(#[from] JoinError),
 }
 
 pub type Result<T> = result::Result<T, PipeReadError>;
@@ -105,6 +106,7 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
         }
     }
 
+    
     async_impl_method!(read, usize, (buf: &mut [u8]), (buf));
     async_impl_method!(read_buf, usize, (buf: &mut impl BufMut), (buf));
     async_impl_method!(read_exact, usize, (buf: &mut [u8]), (buf));

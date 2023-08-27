@@ -26,6 +26,7 @@ macro_rules! async_impl_method {
 
 //TODO: Copy documentation from original fn
 impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
+    async_impl_method!(flush, (), (), ());
     async_impl_method!(write, usize, (buf: &[u8]), (buf));
     async_impl_method!(write_buf, usize, (buf: &mut impl Buf), (buf));
     async_impl_method!(write_all, (), (buf: &[u8]), (buf));
