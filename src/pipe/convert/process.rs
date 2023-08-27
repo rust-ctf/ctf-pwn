@@ -22,8 +22,7 @@ pub type ProcessPipe = Pipe<MergedOutput2<ChildStdout, ChildStderr>, ChildStdin>
 pub type StdoutPipe = Pipe<ChildStdout, ChildStdin>;
 pub type StderrPipe = Pipe<ChildStderr, ChildStdin>;
 
-impl ProcessPipe
-{
+impl ProcessPipe {
     pub async fn from_app<S: AsRef<OsStr>>(program: S) -> Result<Self> {
         let command = Command::new(program);
         Self::spawn_command(command)
@@ -49,8 +48,7 @@ impl ProcessPipe
     }
 }
 
-impl StdoutPipe
-{
+impl StdoutPipe {
     pub async fn from_app<S: AsRef<OsStr>>(program: S) -> Result<Self> {
         let command = Command::new(program);
         Self::spawn_command(command)
@@ -66,10 +64,7 @@ impl StdoutPipe
     }
 
     pub fn spawn_command(mut value: Command) -> Result<Self> {
-        let process = value
-            .stdout(Stdio::piped())
-            .stdin(Stdio::piped())
-            .spawn()?;
+        let process = value.stdout(Stdio::piped()).stdin(Stdio::piped()).spawn()?;
 
         let stdin = process.stdin.ok_or(ProcessPipeError::StdinNotSet)?;
         let stdout = process.stdout.ok_or(ProcessPipeError::StdoutNotSet)?;
@@ -77,8 +72,7 @@ impl StdoutPipe
     }
 }
 
-impl StderrPipe
-{
+impl StderrPipe {
     pub async fn from_app<S: AsRef<OsStr>>(program: S) -> Result<Self> {
         let command = Command::new(program);
         Self::spawn_command(command)
@@ -94,10 +88,7 @@ impl StderrPipe
     }
 
     pub fn spawn_command(mut value: Command) -> Result<Self> {
-        let process = value
-            .stderr(Stdio::piped())
-            .stdin(Stdio::piped())
-            .spawn()?;
+        let process = value.stderr(Stdio::piped()).stdin(Stdio::piped()).spawn()?;
 
         let stdin = process.stdin.ok_or(ProcessPipeError::StdinNotSet)?;
         let stderr = process.stderr.ok_or(ProcessPipeError::StdErrNotSet)?;

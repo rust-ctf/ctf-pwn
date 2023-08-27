@@ -26,8 +26,20 @@ macro_rules! async_impl_method {
 
 //TODO: Copy documentation from original fn
 impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
-
-    
+    pub async fn read_all(&self) -> Result<Vec<u8>> {
+        let mut buf = [0u8; 1024];
+        let mut result = Vec::new();
+        loop {
+            match self.read(&mut buf).await {
+                Err(PipeReadError::TimeoutError(_)) => break,
+                Err(PipeReadError::IoError(e)) if e.kind() == io::ErrorKind::TimedOut => break,
+                Err(e) => return Err(e),
+                Ok(0) => break,
+                Ok(len) => result.extend_from_slice(&buf[..len]),
+            }
+        }
+        Ok(result)
+    }
 
     async_impl_method!(read, usize, (buf: &mut [u8]), (buf));
     async_impl_method!(read_buf, usize, (buf: &mut impl BufMut), (buf));

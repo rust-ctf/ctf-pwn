@@ -1,4 +1,4 @@
-use std::{result};
+use std::result;
 
 use super::*;
 use bytes::Buf;

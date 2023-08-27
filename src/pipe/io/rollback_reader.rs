@@ -18,10 +18,7 @@ impl<R: AsyncRead + Unpin> RollbackReader<R> {
         self.rollback_buf.extend_from_slice(data);
     }
 
-    pub fn read_until()
-    {
-
-    }
+    pub fn read_until() {}
 }
 
 impl<R: AsyncRead + Unpin> AsyncRead for RollbackReader<R> {
@@ -35,13 +32,13 @@ impl<R: AsyncRead + Unpin> AsyncRead for RollbackReader<R> {
             let len = self.rollback_buf.len().max(buf.remaining());
             buf.put_slice(&self.rollback_buf[..len]);
             self.rollback_buf.drain(..len);
-            return std::task::Poll::Ready(Ok(()));//len));
+            return std::task::Poll::Ready(Ok(())); //len));
         }
 
         // If rollback buffer is empty, delegate to the inner reader.
-         // If rollback buffer is empty, delegate to the inner reader.
-         match std::pin::Pin::new(&mut self.inner).poll_read(cx, buf) {
-            std::task::Poll::Ready(Ok(())) => std::task::Poll::Ready(Ok(())),//buf.len())),
+        // If rollback buffer is empty, delegate to the inner reader.
+        match std::pin::Pin::new(&mut self.inner).poll_read(cx, buf) {
+            std::task::Poll::Ready(Ok(())) => std::task::Poll::Ready(Ok(())), //buf.len())),
             std::task::Poll::Ready(Err(e)) => std::task::Poll::Ready(Err(e)),
             std::task::Poll::Pending => std::task::Poll::Pending,
         }
