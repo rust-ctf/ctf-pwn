@@ -4,27 +4,39 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use std::future::Future;
+use bytes::BufMut;
 use tokio::io::{AsyncRead, AsyncReadExt, ReadBuf};
 use tokio::time::Instant;
 
-use crate::RollbackReader;
-
-pub struct TimedAsyncReader<R: AsyncRead> {
-    reader: RollbackReader<R>,
+pub struct TimedBufReader<R: AsyncRead> {
+    reader: R,
+    buf: Vec<u8>,
     timeout: Duration,
     start_time: Option<Instant>,
     poll_rate: Duration,
 }
 
-impl<R: AsyncRead + Unpin> TimedAsyncReader<R> {
+impl<R: AsyncRead + Unpin> TimedBufReader<R> {
     pub fn new(inner: R, timeout: Duration) -> Self {
-        TimedAsyncReader {
-            reader: RollbackReader::new(inner),
+        TimedBufReader {
+            reader: inner,
+            buf: Vec::with_capacity(1024),
             timeout,
             start_time: None,
             poll_rate: Duration::from_millis(50),
         }
     }
+
+    pub fn restore(&mut self, mut buf: Vec<u8>)
+    {
+        self.buf.append(&mut buf);
+    }
+
+    pub fn restore_slice(&mut self, mut buf: &[u8])
+    {
+        self.buf.put_slice(&mut buf);
+    }
+
     pub fn get_timeout(&self) -> Duration {
         self.timeout
     }
@@ -59,7 +71,7 @@ impl<R: AsyncRead + Unpin> TimedAsyncReader<R> {
     }
 }
 
-impl<R: AsyncRead + Unpin> AsyncRead for TimedAsyncReader<R> {
+impl<R: AsyncRead + Unpin> AsyncRead for TimedBufReader<R> {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -73,6 +85,15 @@ impl<R: AsyncRead + Unpin> AsyncRead for TimedAsyncReader<R> {
         }
 
         self.start_watch();
+
+        if !self.buf.is_empty()
+        {
+            let len = self.buf.len().min(buf.remaining());
+            buf.put_slice(&self.buf[0..len]);
+            self.buf.drain(0..len);
+            return Poll::Ready(Ok(()));
+        }
+
         let mut read_fut = Box::pin(self.reader.read_buf(buf));
         match read_fut.as_mut().poll(cx) {
             Poll::Ready(Ok(_result)) => {

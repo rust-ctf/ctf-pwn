@@ -28,7 +28,7 @@ macro_rules! async_impl_method {
 impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
     pub async fn read_all(&self) -> Result<Vec<u8>> {
         let mut buf = [0u8; 1024];
-        let mut result = Vec::new();
+        let mut result = Vec::with_capacity(1024);
         loop {
             match self.read(&mut buf).await {
                 Err(PipeReadError::TimeoutError(_)) => break,
@@ -39,6 +39,35 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
             }
         }
         Ok(result)
+    }
+
+    pub async fn read_until(&self, end: &[u8]) -> Result<Vec<u8>>
+    {
+        if end.len() == 0
+        {
+            return Ok(Vec::new());
+        }
+        let mut result = Vec::with_capacity(1024);
+        let mut position = 0usize;
+        let mut buf = [0u8; 1024];
+        loop {
+            match self.read(&mut buf).await {
+                Err(e) => {
+                    self.read_stream.lock().await.restore_slice(&result);
+                    return Err(e);
+                }
+                Ok(len) => result.extend_from_slice(&buf[..len]),
+            }
+
+            for w in result[position..].windows(end.len()) {
+                if w == end {
+                    self.read_stream.lock().await.restore_slice(&result[(position + end.len())..]);
+                    result.truncate(position);
+                    return Ok(result);
+                }
+                position += 1;
+            }
+        }
     }
 
     async_impl_method!(read, usize, (buf: &mut [u8]), (buf));
