@@ -24,6 +24,13 @@ macro_rules! async_impl_method {
     };
 }
 
+enum ReadUntilActuion
+{
+    Restore,
+    Return,
+    Discard,
+}
+
 //TODO: Copy documentation from original fn
 impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
     pub async fn read_all(&self) -> Result<Vec<u8>> {
@@ -43,6 +50,21 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
 
     pub async fn read_until(&self, end: &[u8]) -> Result<Vec<u8>>
     {
+        self.read_until_internal(end, ReadUntilActuion::Return).await
+    }
+
+    pub async fn read_until_restore(&self, end: &[u8]) -> Result<Vec<u8>>
+    {
+        self.read_until_internal(end, ReadUntilActuion::Restore).await
+    }
+
+    pub async fn read_until_discard(&self, end: &[u8]) -> Result<Vec<u8>>
+    {
+        self.read_until_internal(end, ReadUntilActuion::Discard).await
+    }
+
+    async fn read_until_internal(&self, end: &[u8], action: ReadUntilActuion) -> Result<Vec<u8>>
+    {
         if end.len() == 0
         {
             return Ok(Vec::new());
@@ -59,10 +81,16 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
                 Ok(len) => result.extend_from_slice(&buf[..len]),
             }
 
+            //TODO: Optimize
             for w in result[position..].windows(end.len()) {
                 if w == end {
-                    self.read_stream.lock().await.restore_slice(&result[(position + end.len())..]);
-                    result.truncate(position);
+                    let (slice_start, truncate_start) = match action {
+                        ReadUntilActuion::Return => (position + end.len(), position + end.len()),
+                        ReadUntilActuion::Restore => (position, position),
+                        ReadUntilActuion::Discard => (position + end.len(), position),
+                    };
+                    self.read_stream.lock().await.restore_slice(&result[(slice_start + end.len())..]);
+                    result.truncate(truncate_start);
                     return Ok(result);
                 }
                 position += 1;
