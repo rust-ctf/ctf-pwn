@@ -24,8 +24,7 @@ macro_rules! async_impl_method {
     };
 }
 
-enum ReadUntilActuion
-{
+enum ReadUntilActuion {
     Restore,
     Return,
     Discard,
@@ -41,32 +40,30 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
                 Err(PipeReadError::TimeoutError(_)) => break,
                 Err(PipeReadError::IoError(e)) if e.kind() == io::ErrorKind::TimedOut => break,
                 Err(e) => return Err(e),
-                Ok(0) => break,
+                Ok(0) => break, //EOF
                 Ok(len) => result.extend_from_slice(&buf[..len]),
             }
         }
         Ok(result)
     }
 
-    pub async fn read_until(&self, end: &[u8]) -> Result<Vec<u8>>
-    {
-        self.read_until_internal(end, ReadUntilActuion::Return).await
+    pub async fn read_until(&self, end: &[u8]) -> Result<Vec<u8>> {
+        self.read_until_internal(end, ReadUntilActuion::Return)
+            .await
     }
 
-    pub async fn read_until_restore(&self, end: &[u8]) -> Result<Vec<u8>>
-    {
-        self.read_until_internal(end, ReadUntilActuion::Restore).await
+    pub async fn read_until_restore(&self, end: &[u8]) -> Result<Vec<u8>> {
+        self.read_until_internal(end, ReadUntilActuion::Restore)
+            .await
     }
 
-    pub async fn read_until_discard(&self, end: &[u8]) -> Result<Vec<u8>>
-    {
-        self.read_until_internal(end, ReadUntilActuion::Discard).await
+    pub async fn read_until_discard(&self, end: &[u8]) -> Result<Vec<u8>> {
+        self.read_until_internal(end, ReadUntilActuion::Discard)
+            .await
     }
 
-    async fn read_until_internal(&self, end: &[u8], action: ReadUntilActuion) -> Result<Vec<u8>>
-    {
-        if end.len() == 0
-        {
+    async fn read_until_internal(&self, end: &[u8], action: ReadUntilActuion) -> Result<Vec<u8>> {
+        if end.len() == 0 {
             return Ok(Vec::new());
         }
         let mut result = Vec::with_capacity(1024);
@@ -77,6 +74,13 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
                 Err(e) => {
                     self.read_stream.lock().await.restore_slice(&result);
                     return Err(e);
+                }
+                Ok(0) => {
+                    self.read_stream.lock().await.restore_slice(&result);
+                    return Err(PipeReadError::IoError(Error::new(
+                        ErrorKind::UnexpectedEof,
+                        "Reached end of stream without match",
+                    )));
                 }
                 Ok(len) => result.extend_from_slice(&buf[..len]),
             }
@@ -89,7 +93,10 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
                         ReadUntilActuion::Restore => (position, position),
                         ReadUntilActuion::Discard => (position + end.len(), position),
                     };
-                    self.read_stream.lock().await.restore_slice(&result[(slice_start + end.len())..]);
+                    self.read_stream
+                        .lock()
+                        .await
+                        .restore_slice(&result[(slice_start + end.len())..]);
                     result.truncate(truncate_start);
                     return Ok(result);
                 }

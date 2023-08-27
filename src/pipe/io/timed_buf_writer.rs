@@ -79,11 +79,11 @@ impl<W: AsyncWrite + Unpin> AsyncWrite for TimedBufWriter<W> {
             Poll::Ready(Ok(result)) => {
                 self.clear_watch();
                 Poll::Ready(Ok(result))
-            },
+            }
             Poll::Ready(Err(e)) => {
                 self.clear_watch();
                 Poll::Ready(Err(io::Error::new(io::ErrorKind::Other, e)))
-            },
+            }
             Poll::Pending => {
                 let waker = cx.waker().clone();
                 let delay_duration = self.poll_rate; // adjust as needed

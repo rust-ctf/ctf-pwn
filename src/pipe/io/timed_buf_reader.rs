@@ -3,8 +3,8 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
 
-use std::future::Future;
 use bytes::BufMut;
+use std::future::Future;
 use tokio::io::{AsyncRead, AsyncReadExt, ReadBuf};
 use tokio::time::Instant;
 
@@ -27,13 +27,11 @@ impl<R: AsyncRead + Unpin> TimedBufReader<R> {
         }
     }
 
-    pub fn restore(&mut self, mut buf: Vec<u8>)
-    {
+    pub fn restore(&mut self, mut buf: Vec<u8>) {
         self.buf.append(&mut buf);
     }
 
-    pub fn restore_slice(&mut self, mut buf: &[u8])
-    {
+    pub fn restore_slice(&mut self, mut buf: &[u8]) {
         self.buf.put_slice(&mut buf);
     }
 
@@ -86,8 +84,7 @@ impl<R: AsyncRead + Unpin> AsyncRead for TimedBufReader<R> {
 
         self.start_watch();
 
-        if !self.buf.is_empty()
-        {
+        if !self.buf.is_empty() {
             let len = self.buf.len().min(buf.remaining());
             buf.put_slice(&self.buf[0..len]);
             self.buf.drain(0..len);
