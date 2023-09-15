@@ -1,4 +1,6 @@
 use std::result;
+use std::string::FromUtf8Error;
+use ascii::FromAsciiError;
 use super::*;
 use bytes::BufMut;
 use thiserror::*;
@@ -12,6 +14,10 @@ pub enum PipeReadError {
     TimeoutError(#[from] Elapsed),
     #[error("thread error")]
     ThreadError(#[from] JoinError),
+    #[error("ascii error")]
+    AsciiError(#[from] FromAsciiError<Vec<u8>>),
+    #[error("utf8 error")]
+    Ut8Error(#[from] FromUtf8Error),
 }
 
 pub type Result<T> = result::Result<T, PipeReadError>;
