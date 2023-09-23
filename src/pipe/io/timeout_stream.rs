@@ -30,6 +30,16 @@ impl<T> TimeoutSream<T> {
             timeout,
         }
     }
+
+    pub fn set_timeout(&mut self, timeout: Duration)
+    {
+        self.timeout = timeout;
+    }
+
+    pub fn get_timeout(&self) -> Duration
+    {
+        self.timeout
+    }
 }
 
 impl<R: AsyncRead> AsyncRead for TimeoutSream<R> {
