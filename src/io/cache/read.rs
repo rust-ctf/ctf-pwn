@@ -1,5 +1,4 @@
 use crate::io::cache::CacheReader;
-use std::io::Write;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use tokio::io;
