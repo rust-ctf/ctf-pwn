@@ -1,6 +1,6 @@
 mod error;
 mod read;
-mod traits;
+mod write;
 
 pub use error::*;
 pub use read::*;

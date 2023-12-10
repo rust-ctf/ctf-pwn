@@ -1,12 +1,11 @@
 use ascii::FromAsciiError;
 use std::result;
 use thiserror::Error;
-use tokio::io;
 
 #[derive(Error, Debug)]
 pub enum PipeError {
     #[error("io error")]
-    IOError(#[from] io::Error),
+    IOError(#[from] std::io::Error),
     #[error("ascii parse error")]
     AsciiParseError(String),
     #[error("utf8 parse error")]
