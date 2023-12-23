@@ -1,4 +1,5 @@
 mod error;
+mod interactive;
 mod read;
 mod write;
 

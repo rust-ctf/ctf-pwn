@@ -45,7 +45,7 @@ pub trait PipeReadExt: AsyncRead + HasCache + HasTimeout + Unpin {
                     match data[start..]
                         .windows(end_len)
                         .enumerate()
-                        .find(|(i, w)| *w == end.as_ref())
+                        .find(|(_, w)| *w == end.as_ref())
                     {
                         None => continue,
                         Some((i, _)) => {
