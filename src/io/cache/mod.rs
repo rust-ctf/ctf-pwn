@@ -20,13 +20,19 @@ pin_project! {
 }
 
 impl<R: HasTimeout> HasTimeout for CacheReader<R> {
-    fn timeout(&self) -> Option<Duration> {
-        self.reader.timeout()
+    fn read_timeout(&self) -> Option<Duration> {
+        self.reader.read_timeout()
     }
 
-    fn set_timeout(&mut self, timeout: Option<Duration>) {
-        self.reader.set_timeout(timeout)
+    fn set_read_timeout(&mut self, timeout: Option<Duration>) {
+        self.reader.set_read_timeout(timeout)
     }
+
+    fn write_timeout(&self) -> Option<Duration> {
+        None
+    }
+
+    fn set_write_timeout(&mut self, timeout: Option<Duration>) {}
 }
 
 impl<R> HasCache for CacheReader<R> {

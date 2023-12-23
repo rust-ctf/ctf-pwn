@@ -1,10 +1,12 @@
 use crate::io::cache::HasCache;
 use crate::io::timeout::HasTimeout;
-use crate::io::PipeError;
+use crate::io::{Pipe, PipeError};
 use ascii::AsciiString;
-use tokio::io::{AsyncRead, AsyncReadExt};
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite};
 
 const BLOCK_SIZE: usize = 4096;
+
+impl<T> PipeReadExt for T where T: AsyncRead + HasCache + HasTimeout + Unpin {}
 
 pub trait PipeReadExt: AsyncRead + HasCache + HasTimeout + Unpin {
     async fn recv(&mut self) -> Result<Vec<u8>, PipeError> {

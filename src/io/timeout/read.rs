@@ -21,19 +21,25 @@ pin_project! {
 }
 
 impl<R> HasTimeout for TimeoutReader<R> {
-    fn timeout(&self) -> Option<Duration> {
+    fn read_timeout(&self) -> Option<Duration> {
         self.state.timeout()
     }
 
-    fn set_timeout(&mut self, timeout: Option<Duration>) {
+    fn set_read_timeout(&mut self, timeout: Option<Duration>) {
         self.state.set_timeout(timeout);
     }
+
+    fn write_timeout(&self) -> Option<Duration> {
+        None
+    }
+
+    fn set_write_timeout(&mut self, timeout: Option<Duration>) {}
 }
 
 impl<R> TimeoutReader<R> {
     /// Sets the read timeout.
     ///
-    /// This will reset any pending timeout. Use [`set_timeout`](Self::set_timeout) instead if the reader is not yet
+    /// This will reset any pending timeout. Use [`set_timeout`](Self::set_read_timeout) instead if the reader is not yet
     /// pinned.
     pub fn set_timeout_pinned(self: Pin<&mut Self>, timeout: Option<Duration>) {
         self.project().state.set_timeout_pinned(timeout);
