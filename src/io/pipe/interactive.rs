@@ -93,7 +93,6 @@ where
         match receiver.try_recv()
         {
             Ok(data) => {
-                println!("Received");
                 match stdout.write_all(&data).await
                 {
                     Ok(_) => {
@@ -119,6 +118,12 @@ where
                    handle_key_event(key_event, &mut cache, writer).await;
                 },
                 Ok(event::Event::Resize(width, height)) => {},
+                Ok(event::Event::Paste(text)) =>
+                {
+                    cache.push_str(&text);
+                    clear_stdout().await;
+                    execute!(std::io::stdout(), Print(&cache));
+                }
                 _ => {},
             }
         }
@@ -150,7 +155,7 @@ async fn handle_key_event<W>(key_event: event::KeyEvent, cache: &mut String, wri
 {
     clear_stdout().await;
     match key_event.code {
-        event::KeyCode::Char(c) if c.is_ascii() => {
+        event::KeyCode::Char(c) => {
             cache.push(c);
         },
         event::KeyCode::Backspace => {
@@ -159,7 +164,9 @@ async fn handle_key_event<W>(key_event: event::KeyEvent, cache: &mut String, wri
         event::KeyCode::Enter => {
             writer.write(cache.as_bytes()).await.unwrap();
             let _ = writer.flush().await;
+            execute!(std::io::stdout(), Print(&cache));
             cache.clear();
+            return;
         },
         event::KeyCode::Left => {
             // Move cursor left...
@@ -172,7 +179,6 @@ async fn handle_key_event<W>(key_event: event::KeyEvent, cache: &mut String, wri
         }
         _ => {}
     }
-
     execute!(std::io::stdout(), Print(cache));
 }
 
