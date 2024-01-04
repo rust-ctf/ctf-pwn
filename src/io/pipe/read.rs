@@ -1,3 +1,4 @@
+use std::io::ErrorKind;
 use crate::io::cache::HasCache;
 use crate::io::timeout::HasTimeout;
 use crate::io::PipeError;
@@ -15,23 +16,24 @@ pub trait PipeReadExt: AsyncRead + HasCache + HasTimeout + Unpin {
         Ok(Vec::from(&data[..size]))
     }
 
-    async fn recv_all(&mut self) -> Result<Vec<u8>, PipeError> {
+    async fn recv_timeout(&mut self) -> Result<Vec<u8>, PipeError> {
         let mut res = Vec::new();
         loop {
             let mut data = [0u8; BLOCK_SIZE];
             match self.read(&mut data).await {
                 Ok(0) => break,
                 Ok(size) => res.extend_from_slice(&data[..size]),
-                Err(_) => break,
+                Err(e) if e.kind() == ErrorKind::TimedOut => break,
+                Err(e) => return Err(e.into()),
             }
         }
 
         Ok(res)
     }
 
-    async fn recv_until(
+    async fn recv_until<T:AsRef<[u8]>>(
         &mut self,
-        end: &dyn AsRef<[u8]>,
+        end: T,
         drop: bool,
     ) -> Result<Vec<u8>, PipeError> {
         let mut res = Vec::new();
@@ -78,8 +80,8 @@ pub trait PipeReadExt: AsyncRead + HasCache + HasTimeout + Unpin {
         Ok(String::from_utf8(data)?)
     }
 
-    async fn recvus_all(&mut self) -> Result<String, PipeError> {
-        let data = self.recv_all().await?;
+    async fn recvus_timeout(&mut self) -> Result<String, PipeError> {
+        let data = self.recv_timeout().await?;
         Ok(String::from_utf8(data)?)
     }
     async fn recvus_until(
@@ -106,8 +108,8 @@ pub trait PipeReadExt: AsyncRead + HasCache + HasTimeout + Unpin {
         Ok(AsciiString::from_ascii(data)?)
     }
 
-    async fn recvas_all(&mut self) -> Result<AsciiString, PipeError> {
-        let data = self.recv_all().await?;
+    async fn recvas_timeout(&mut self) -> Result<AsciiString, PipeError> {
+        let data = self.recv_timeout().await?;
         Ok(AsciiString::from_ascii(data)?)
     }
 

@@ -1,10 +1,9 @@
 mod payload;
 mod write;
-
-use std::fmt::Write;
-use crossterm::Command;
+mod interactive;
 
 pub use payload::*;
 pub use write::*;
+pub use interactive::*;
 
 

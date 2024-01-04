@@ -16,14 +16,14 @@ pub enum ProcessPipeError {
     IoError(#[from] tokio::io::Error),
 }
 
-pub type Result<T> = result::Result<T, ProcessPipeError>;
+pub type ProcessPipeResult<T> = result::Result<T, ProcessPipeError>;
 
 pub type ProcessPipe = Pipe<MergedAsyncReader<ChildStdout, ChildStderr>, ChildStdin>;
 pub type StdoutPipe = Pipe<ChildStdout, ChildStdin>;
 pub type StderrPipe = Pipe<ChildStderr, ChildStdin>;
 
 impl ProcessPipe {
-    pub async fn from_app<S: AsRef<OsStr>>(program: S) -> Result<Self> {
+    pub async fn from_app<S: AsRef<OsStr>>(program: S) -> ProcessPipeResult<Self> {
         let command = Command::new(program);
         Self::spawn_command(command)
     }
@@ -31,13 +31,13 @@ impl ProcessPipe {
     pub async fn from_app_args<S: AsRef<OsStr>, I: IntoIterator<Item = S>>(
         program: S,
         args: I,
-    ) -> Result<Self> {
+    ) -> ProcessPipeResult<Self> {
         let mut command = Command::new(program);
         let _ = command.args(args);
         Self::spawn_command(command)
     }
 
-    pub fn spawn_command(mut value: Command) -> Result<Self> {
+    pub fn spawn_command(mut value: Command) -> ProcessPipeResult<Self> {
         let process = value
             .stdout(Stdio::piped())
             .stdin(Stdio::piped())
@@ -49,7 +49,7 @@ impl ProcessPipe {
 }
 
 impl StdoutPipe {
-    pub async fn from_app<S: AsRef<OsStr>>(program: S) -> Result<Self> {
+    pub async fn from_app<S: AsRef<OsStr>>(program: S) -> ProcessPipeResult<Self> {
         let command = Command::new(program);
         Self::spawn_command(command)
     }
@@ -57,13 +57,13 @@ impl StdoutPipe {
     pub async fn from_app_args<S: AsRef<OsStr>, I: IntoIterator<Item = S>>(
         program: S,
         args: I,
-    ) -> Result<Self> {
+    ) -> ProcessPipeResult<Self> {
         let mut command = Command::new(program);
         let _ = command.args(args);
         Self::spawn_command(command)
     }
 
-    pub fn spawn_command(mut value: Command) -> Result<Self> {
+    pub fn spawn_command(mut value: Command) -> ProcessPipeResult<Self> {
         let process = value.stdout(Stdio::piped()).stdin(Stdio::piped()).spawn()?;
 
         let stdin = process.stdin.ok_or(ProcessPipeError::StdinNotSet)?;
@@ -73,7 +73,7 @@ impl StdoutPipe {
 }
 
 impl StderrPipe {
-    pub async fn from_app<S: AsRef<OsStr>>(program: S) -> Result<Self> {
+    pub async fn from_app<S: AsRef<OsStr>>(program: S) -> ProcessPipeResult<Self> {
         let command = Command::new(program);
         Self::spawn_command(command)
     }
@@ -81,13 +81,13 @@ impl StderrPipe {
     pub async fn from_app_args<S: AsRef<OsStr>, I: IntoIterator<Item = S>>(
         program: S,
         args: I,
-    ) -> Result<Self> {
+    ) -> ProcessPipeResult<Self> {
         let mut command = Command::new(program);
         let _ = command.args(args);
         Self::spawn_command(command)
     }
 
-    pub fn spawn_command(mut value: Command) -> Result<Self> {
+    pub fn spawn_command(mut value: Command) -> ProcessPipeResult<Self> {
         let process = value.stderr(Stdio::piped()).stdin(Stdio::piped()).spawn()?;
 
         let stdin = process.stdin.ok_or(ProcessPipeError::StdinNotSet)?;
@@ -99,7 +99,7 @@ impl StderrPipe {
 impl TryFrom<Child> for ProcessPipe {
     type Error = ProcessPipeError;
 
-    fn try_from(value: Child) -> Result<Self> {
+    fn try_from(value: Child) -> ProcessPipeResult<Self> {
         let stdin = value.stdin.ok_or(ProcessPipeError::StdinNotSet)?;
         let stdout = value.stdout.ok_or(ProcessPipeError::StdoutNotSet)?;
         let stderr = value.stderr.ok_or(ProcessPipeError::StdErrNotSet)?;

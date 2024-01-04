@@ -1,4 +1,3 @@
-use std::fmt::Write;
 use crate::io::payload::write::PayloadWrite;
 
 pub struct Payload {

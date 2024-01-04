@@ -1,6 +1,4 @@
 use crossterm::Command;
-use tokio::io::AsyncWrite;
-use crate::io::{HasTimeout, PipeWriteExt};
 
 pub trait PayloadWrite
 {
