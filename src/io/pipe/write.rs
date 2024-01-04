@@ -6,7 +6,7 @@ use tokio::io::{AsyncWrite, AsyncWriteExt};
 impl<T> PipeWriteExt for T where T: AsyncWrite + HasTimeout + Unpin {}
 
 pub trait PipeWriteExt: AsyncWrite + HasTimeout + Unpin {
-    async fn write_line(&mut self, text: &dyn AsRef<[u8]>) -> Result<usize, PipeError> {
+    async fn write_line<T: AsRef<[u8]>>(&mut self, text: T) -> Result<usize, PipeError> {
         // to_vec is used so we dont accidentally trigger
         // flush if user did not wrap writer into BufWriter
         let mut res = text.as_ref().to_vec();
@@ -15,7 +15,7 @@ pub trait PipeWriteExt: AsyncWrite + HasTimeout + Unpin {
         Ok(size)
     }
 
-    async fn write_line_crlf(&mut self, text: &dyn AsRef<[u8]>) -> Result<usize, PipeError> {
+    async fn write_line_crlf<T: AsRef<[u8]>>(&mut self, text: T) -> Result<usize, PipeError> {
         let mut res = text.as_ref().to_vec();
         res.push(b'\r');
         res.push(b'\n');
@@ -23,7 +23,7 @@ pub trait PipeWriteExt: AsyncWrite + HasTimeout + Unpin {
         Ok(size)
     }
 
-    async fn write_flush(&mut self, data: &dyn AsRef<[u8]>) -> Result<usize, PipeError> {
+    async fn write_flush<T: AsRef<[u8]>>(&mut self, data: T) -> Result<usize, PipeError> {
         let size = self.write(data.as_ref()).await?;
         self.flush().await?;
         Ok(size)
