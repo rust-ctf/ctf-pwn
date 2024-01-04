@@ -1,6 +1,6 @@
 use crate::io::timeout::HasTimeout;
-use crate::io::{HasCache, PipeError, PipeReadExt};
-use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
+use crate::io::{PipeError};
+use tokio::io::{AsyncWrite, AsyncWriteExt};
 
 impl<T> PipeWriteExt for T where T: AsyncWrite + HasTimeout + Unpin {}
 

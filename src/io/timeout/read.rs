@@ -33,7 +33,7 @@ impl<R> HasTimeout for TimeoutReader<R> {
         None
     }
 
-    fn set_write_timeout(&mut self, timeout: Option<Duration>) {}
+    fn set_write_timeout(&mut self, _timeout: Option<Duration>) {}
 }
 
 impl<R> TimeoutReader<R> {

@@ -13,7 +13,7 @@ pub use write::*;
 
 use pin_project_lite::pin_project;
 use std::time::Duration;
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, ReadBuf};
+use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 
 use super::{cache::*, timeout::*};
 
@@ -51,7 +51,7 @@ impl<R: AsyncRead, W> AsyncRead for Pipe<R, W> {
         cx: &mut Context<'_>,
         buf: &mut ReadBuf<'_>,
     ) -> Poll<std::io::Result<()>> {
-        let mut this = self.project();
+        let this = self.project();
         this.reader.poll_read(cx, buf)
     }
 }
@@ -62,7 +62,7 @@ impl<R, W: AsyncWrite> AsyncWrite for Pipe<R, W> {
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<std::result::Result<usize, Error>> {
-        let mut this = self.project();
+        let this = self.project();
         this.writer.poll_write(cx, buf)
     }
 
@@ -70,7 +70,7 @@ impl<R, W: AsyncWrite> AsyncWrite for Pipe<R, W> {
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
     ) -> Poll<std::result::Result<(), Error>> {
-        let mut this = self.project();
+        let this = self.project();
         this.writer.poll_flush(cx)
     }
 
@@ -78,7 +78,7 @@ impl<R, W: AsyncWrite> AsyncWrite for Pipe<R, W> {
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
     ) -> Poll<std::result::Result<(), Error>> {
-        let mut this = self.project();
+        let this = self.project();
         this.writer.poll_shutdown(cx)
     }
 }

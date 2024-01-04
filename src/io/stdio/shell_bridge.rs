@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-use crate::io::{CacheReader, TimeoutReader, TimeoutWriter};
+
 use crossterm::cursor::{DisableBlinking, EnableBlinking, MoveTo};
 use crossterm::event::{
     DisableBracketedPaste, EnableBracketedPaste, KeyCode, KeyEvent, KeyEventKind,
@@ -18,7 +18,7 @@ use crossterm::*;
 use std::borrow::BorrowMut;
 use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
-use tokio::{io, join};
+use tokio::{join};
 
 pub struct ShellTerminalBridge {}
 
@@ -78,7 +78,7 @@ impl<'a, W: AsyncWrite + Unpin> StdoutState<'a, W> {
     fn get_cursor_relative_index(&self) -> usize {
         let (start_x, start_y) = self.start_position;
         let (end_x, end_y) = self.cursor_position;
-        let (w, h) = self.current_dimensions;
+        let (w, _h) = self.current_dimensions;
 
         let full_lines = if end_y > start_y {
             end_y - start_y - 1
@@ -283,7 +283,7 @@ where
                 Ok(event::Event::Key(key_event)) => {
                     stdout.insert(key_event).await?;
                 }
-                Ok(event::Event::Resize(width, height)) => {
+                Ok(event::Event::Resize(_width, _height)) => {
                     //TODO: recalculate cursor after resize
                 }
                 Ok(event::Event::Paste(text)) => {
@@ -306,28 +306,28 @@ impl TerminalBridge for ShellTerminalBridge {
         let (rx, tx) = channel(100);
 
         terminal::enable_raw_mode().unwrap();
-        execute!(stdout(), EnableBlinking, EnableBracketedPaste);
+        let _ = execute!(stdout(), EnableBlinking, EnableBracketedPaste);
 
         let stop_signal = Arc::new(AtomicBool::new(false));
         let read_stop_signal = stop_signal.clone();
 
         let reader_task = tokio::spawn(async move {
-            let reader_ptr = unsafe { reader_ptr as *mut R };
+            let reader_ptr =  reader_ptr as *mut R ;
             let reader = unsafe { &mut *reader_ptr };
             let _ = read_task(reader, read_stop_signal.clone(), rx).await;
             read_stop_signal.store(true, Ordering::SeqCst);
         });
 
         let writer_task = tokio::spawn(async move {
-            let writer_ptr = unsafe { writer_ptr as *mut W };
+            let writer_ptr = writer_ptr as *mut W ;
             let writer = unsafe { &mut *writer_ptr };
             let _ = write_task(writer, stop_signal.clone(), tx).await;
             stop_signal.store(true, Ordering::SeqCst);
         });
 
-        join!(reader_task, writer_task);
+        let _ = join!(reader_task, writer_task);
 
-        execute!(stdout(), DisableBlinking, DisableBracketedPaste);
+        let _ = execute!(stdout(), DisableBlinking, DisableBracketedPaste);
 
         terminal::disable_raw_mode().unwrap();
     }

@@ -1,7 +1,7 @@
 mod read;
 mod traits;
 
-pub use read::*;
+
 pub use traits::*;
 
 use crate::io::timeout::HasTimeout;
@@ -32,7 +32,7 @@ impl<R: HasTimeout> HasTimeout for CacheReader<R> {
         None
     }
 
-    fn set_write_timeout(&mut self, timeout: Option<Duration>) {}
+    fn set_write_timeout(&mut self, _timeout: Option<Duration>) {}
 }
 
 impl<R> HasCache for CacheReader<R> {

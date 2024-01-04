@@ -1,8 +1,8 @@
 use crate::io::cache::HasCache;
 use crate::io::timeout::HasTimeout;
-use crate::io::{Pipe, PipeError};
+use crate::io::{PipeError};
 use ascii::AsciiString;
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite};
+use tokio::io::{AsyncRead, AsyncReadExt};
 
 const BLOCK_SIZE: usize = 4096;
 

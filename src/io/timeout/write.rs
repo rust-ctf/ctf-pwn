@@ -25,7 +25,7 @@ impl<W> HasTimeout for TimeoutWriter<W> {
         None
     }
 
-    fn set_read_timeout(&mut self, timeout: Option<Duration>) {}
+    fn set_read_timeout(&mut self, _timeout: Option<Duration>) {}
 
     fn write_timeout(&self) -> Option<Duration> {
         self.state.timeout()
