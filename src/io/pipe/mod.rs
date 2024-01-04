@@ -1,13 +1,12 @@
+pub mod ansi;
 mod error;
 mod interactive;
 mod read;
 mod write;
-pub mod ansi;
 
 pub use error::*;
 pub use interactive::*;
 pub use read::*;
-pub(crate) use ansi::*;
 
 use std::io::Error;
 use std::pin::Pin;

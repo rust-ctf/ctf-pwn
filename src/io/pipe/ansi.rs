@@ -1,6 +1,6 @@
+use crossterm::cursor::{MoveDown, MoveLeft, MoveRight, MoveUp};
+use crossterm::{csi, Command};
 use std::fmt;
-use std::fmt::Write;
-use crossterm::{Command, csi};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Home;
@@ -27,8 +27,8 @@ impl Command for Insert {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Delete;
-impl Command for Delete {
+pub struct Del;
+impl Command for Del {
     fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
         f.write_str(csi!("3~"))
     }
@@ -75,20 +75,20 @@ impl Command for PgDn {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct F(u8);
+pub struct F(pub u8);
 impl Command for F {
     fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
         let index = match self.0 {
-            0 => "10", // F0
-            1 => "11", // F1
-            2 => "12", // F2
-            3 => "13", // F3
-            4 => "14", // F4
-            5 => "15", // F5
-            6 => "17", // F6
-            7 => "18", // F7
-            8 => "19", // F8
-            9 => "20", // F9
+            0 => "10",  // F0
+            1 => "11",  // F1
+            2 => "12",  // F2
+            3 => "13",  // F3
+            4 => "14",  // F4
+            5 => "15",  // F5
+            6 => "17",  // F6
+            7 => "18",  // F7
+            8 => "19",  // F8
+            9 => "20",  // F9
             10 => "21", // F10
             11 => "23", // F11
             12 => "24", // F12
@@ -100,9 +100,93 @@ impl Command for F {
             18 => "32", // F18
             19 => "33", // F19
             20 => "34", // F20
-            _ => panic!("Unsupported F key")
+            _ => panic!("Unsupported F key"),
         };
         write!(f, csi!("{}~"), index)
+    }
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Backspace;
+impl Command for Backspace {
+    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+        f.write_str("\x08")
+    }
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Enter;
+impl Command for Enter {
+    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+        f.write_str("\n")
+    }
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Up;
+impl Command for Up {
+    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+        MoveUp(0).write_ansi(f)
+    }
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> std::io::Result<()> {
+        MoveUp(0).execute_winapi()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Down;
+impl Command for Down {
+    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+        MoveDown(0).write_ansi(f)
+    }
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> std::io::Result<()> {
+        MoveDown(0).execute_winapi()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Left;
+impl Command for Left {
+    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+        MoveLeft(0).write_ansi(f)
+    }
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> std::io::Result<()> {
+        MoveLeft(0).execute_winapi()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Right;
+impl Command for Right {
+    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+        MoveRight(0).write_ansi(f)
+    }
+    #[cfg(windows)]
+    fn execute_winapi(&self) -> std::io::Result<()> {
+        MoveRight(0).execute_winapi()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Esc;
+impl Command for Esc {
+    fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
+        f.write_str("\x1b")
     }
     #[cfg(windows)]
     fn execute_winapi(&self) -> std::io::Result<()> {

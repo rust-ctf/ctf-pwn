@@ -7,7 +7,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-
 use crossterm::cursor::{DisableBlinking, EnableBlinking, MoveTo};
 use crossterm::event::{
     DisableBracketedPaste, EnableBracketedPaste, KeyCode, KeyEvent, KeyEventKind,
@@ -15,9 +14,9 @@ use crossterm::event::{
 use crossterm::style::Print;
 use crossterm::terminal::{Clear, ClearType};
 use crossterm::*;
+use tokio::join;
 use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
-use tokio::{join};
 
 pub struct ShellTerminalBridge {}
 
@@ -234,7 +233,7 @@ async fn read_task<R>(
     sender: Sender<Vec<u8>>,
 ) -> TerminalResult<()>
 where
-    R: AsyncRead + Unpin + Send,
+    R: AsyncRead + Send + Unpin,
 {
     let mut buffer = [0; 1024];
     loop {
@@ -260,7 +259,7 @@ async fn write_task<W>(
     mut receiver: Receiver<Vec<u8>>,
 ) -> TerminalResult<()>
 where
-    W: AsyncWrite + Unpin + Send,
+    W: AsyncWrite + Send + Unpin,
 {
     let mut stdout = StdoutState::new(writer, stop_signal.clone())?;
 
@@ -295,7 +294,7 @@ where
 }
 
 impl TerminalBridge for ShellTerminalBridge {
-    async fn bridge<R: AsyncRead + Unpin + Send, W: AsyncWrite + Unpin + Send>(
+    async fn bridge<R: AsyncRead + Send + Unpin, W: AsyncWrite + Send + Unpin>(
         reader: &mut R,
         writer: &mut W,
     ) {
@@ -311,14 +310,14 @@ impl TerminalBridge for ShellTerminalBridge {
         let read_stop_signal = stop_signal.clone();
 
         let reader_task = tokio::spawn(async move {
-            let reader_ptr =  reader_ptr as *mut R ;
+            let reader_ptr = reader_ptr as *mut R;
             let reader = unsafe { &mut *reader_ptr };
             let _ = read_task(reader, read_stop_signal.clone(), rx).await;
             read_stop_signal.store(true, Ordering::SeqCst);
         });
 
         let writer_task = tokio::spawn(async move {
-            let writer_ptr = writer_ptr as *mut W ;
+            let writer_ptr = writer_ptr as *mut W;
             let writer = unsafe { &mut *writer_ptr };
             let _ = write_task(writer, stop_signal.clone(), tx).await;
             stop_signal.store(true, Ordering::SeqCst);

@@ -1,6 +1,6 @@
 use crate::io::cache::HasCache;
 use crate::io::timeout::HasTimeout;
-use crate::io::{PipeError};
+use crate::io::PipeError;
 use ascii::AsciiString;
 use tokio::io::{AsyncRead, AsyncReadExt};
 

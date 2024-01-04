@@ -1,7 +1,6 @@
 mod read;
 mod traits;
 
-
 pub use traits::*;
 
 use crate::io::timeout::HasTimeout;
