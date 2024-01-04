@@ -3,10 +3,12 @@ mod error;
 mod interactive;
 mod read;
 mod write;
+mod convert;
 
 pub use error::*;
 pub use interactive::*;
 pub use read::*;
+pub use convert::*;
 
 use std::io::Error;
 use std::pin::Pin;
