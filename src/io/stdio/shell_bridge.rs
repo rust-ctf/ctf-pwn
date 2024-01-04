@@ -15,7 +15,6 @@ use crossterm::event::{
 use crossterm::style::Print;
 use crossterm::terminal::{Clear, ClearType};
 use crossterm::*;
-use std::borrow::BorrowMut;
 use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::{join};
@@ -300,8 +299,8 @@ impl TerminalBridge for ShellTerminalBridge {
         reader: &mut R,
         writer: &mut W,
     ) {
-        let reader_ptr = reader.borrow_mut() as *mut R as usize;
-        let writer_ptr = writer.borrow_mut() as *mut W as usize;
+        let reader_ptr = reader as *mut R as usize;
+        let writer_ptr = writer as *mut W as usize;
 
         let (rx, tx) = channel(100);
 

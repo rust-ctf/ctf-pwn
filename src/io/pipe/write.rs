@@ -21,4 +21,10 @@ pub trait PipeWriteExt: AsyncWrite + HasTimeout + Unpin {
         let size = self.write(&res).await?;
         Ok(size)
     }
+
+    async fn write_flush(&mut self, data: &dyn AsRef<[u8]>) -> Result<usize, PipeError> {
+        let size = self.write(data.as_ref()).await?;
+        self.flush().await?;
+        Ok(size)
+    }
 }
