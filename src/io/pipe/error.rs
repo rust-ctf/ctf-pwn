@@ -4,12 +4,14 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum PipeError {
-    #[error("io error")]
+    #[error("io error {0}")]
     IOError(#[from] std::io::Error),
-    #[error("ascii parse error")]
+    #[error("ascii parse error {0}")]
     AsciiParseError(String),
-    #[error("utf8 parse error")]
+    #[error("utf8 parse error {0}")]
     Utf8ParseError(#[from] std::string::FromUtf8Error),
+    #[error("format error {0}")]
+    FmtError(#[from] std::fmt::Error),
     #[error("unknown error")]
     Unknown,
 }

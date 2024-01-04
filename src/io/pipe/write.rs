@@ -1,3 +1,4 @@
+use crossterm::Command;
 use crate::io::timeout::HasTimeout;
 use crate::io::{PipeError};
 use tokio::io::{AsyncWrite, AsyncWriteExt};
@@ -24,6 +25,23 @@ pub trait PipeWriteExt: AsyncWrite + HasTimeout + Unpin {
 
     async fn write_flush(&mut self, data: &dyn AsRef<[u8]>) -> Result<usize, PipeError> {
         let size = self.write(data.as_ref()).await?;
+        self.flush().await?;
+        Ok(size)
+    }
+
+    async fn write_ansi_command<T:Command>(&mut self, command: T) -> Result<usize, PipeError>
+    {
+        let mut ansi_command = String::new();
+        command.write_ansi(&mut ansi_command)?;
+        let size = self.write(ansi_command.as_bytes()).await?;
+        Ok(size)
+    }
+
+    async fn write_ansi_command_flush<T:Command>(&mut self, command: T) -> Result<usize, PipeError>
+    {
+        let mut ansi_command = String::new();
+        command.write_ansi(&mut ansi_command)?;
+        let size = self.write(ansi_command.as_bytes()).await?;
         self.flush().await?;
         Ok(size)
     }
