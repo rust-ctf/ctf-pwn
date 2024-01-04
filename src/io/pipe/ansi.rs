@@ -1,6 +1,12 @@
-use crossterm::cursor::{MoveDown, MoveLeft, MoveRight, MoveUp};
-use crossterm::{csi, Command};
+use crossterm::Command;
 use std::fmt;
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! csi {
+    ($( $l:expr ),*) => { concat!("\x1b", $( $l ),*) };
+}
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Home;
@@ -114,7 +120,8 @@ impl Command for F {
 pub struct Backspace;
 impl Command for Backspace {
     fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
-        f.write_str("\x08")
+        f.write_str(csi!("D"))?;
+        f.write_str(csi!("P"))
     }
     #[cfg(windows)]
     fn execute_winapi(&self) -> std::io::Result<()> {
@@ -138,23 +145,22 @@ impl Command for Enter {
 pub struct Up;
 impl Command for Up {
     fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
-        MoveUp(0).write_ansi(f)
+        f.write_str(csi!("OA"))
     }
     #[cfg(windows)]
     fn execute_winapi(&self) -> std::io::Result<()> {
-        MoveUp(0).execute_winapi()
+        Ok(())
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Down;
 impl Command for Down {
     fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
-        MoveDown(0).write_ansi(f)
+        f.write_str(csi!("OB"))
     }
     #[cfg(windows)]
     fn execute_winapi(&self) -> std::io::Result<()> {
-        MoveDown(0).execute_winapi()
+        Ok(())
     }
 }
 
@@ -162,11 +168,11 @@ impl Command for Down {
 pub struct Left;
 impl Command for Left {
     fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
-        MoveLeft(0).write_ansi(f)
+        f.write_str(csi!("0D"))
     }
     #[cfg(windows)]
     fn execute_winapi(&self) -> std::io::Result<()> {
-        MoveLeft(0).execute_winapi()
+        Ok(())
     }
 }
 
@@ -174,11 +180,11 @@ impl Command for Left {
 pub struct Right;
 impl Command for Right {
     fn write_ansi(&self, f: &mut impl fmt::Write) -> fmt::Result {
-        MoveRight(0).write_ansi(f)
+        f.write_str(csi!("0C"))
     }
     #[cfg(windows)]
     fn execute_winapi(&self) -> std::io::Result<()> {
-        MoveRight(0).execute_winapi()
+        Ok(())
     }
 }
 

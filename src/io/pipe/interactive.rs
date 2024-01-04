@@ -1,3 +1,4 @@
+use tokio::io::{AsyncRead, AsyncWrite};
 use crate::io::{
     CacheReader, NcursesTerminalBridge, Pipe, PipeReadExt, PipeWriteExt, ShellTerminalBridge,
     TerminalBridge, TimeoutReader, TimeoutWriter,
@@ -6,8 +7,8 @@ use crate::io::{
 impl<T, R, W> PipeInteractiveExt<R, W> for T
 where
     T: AsyncReadWriteSplit<R, W> + Unpin + PipeReadExt + PipeWriteExt,
-    R: PipeReadExt + Send + Unpin,
-    W: PipeWriteExt + Send + Unpin,
+    R: AsyncRead + Send + Unpin,
+    W: AsyncWrite + Send + Unpin,
 {
 }
 
@@ -17,8 +18,8 @@ pub trait AsyncReadWriteSplit<R, W> {
 
 impl<R, W> AsyncReadWriteSplit<CacheReader<TimeoutReader<R>>, TimeoutWriter<W>> for Pipe<R, W>
 where
-    R: PipeReadExt,
-    W: PipeWriteExt,
+    R: AsyncRead + Send + Unpin,
+    W: AsyncWrite + Send + Unpin,
 {
     unsafe fn split_read_write(
         &mut self,
@@ -29,8 +30,8 @@ where
 
 pub trait PipeInteractiveExt<R, W>: AsyncReadWriteSplit<R, W> + Unpin
 where
-    R: PipeReadExt + Send + Unpin,
-    W: PipeWriteExt + Send + Unpin,
+    R: AsyncRead + Send + Unpin,
+    W: AsyncWrite + Send + Unpin,
 {
     async fn interactive_shell(&mut self) -> Result<(), ()> {
         let (reader, writer) = unsafe { self.split_read_write() };
