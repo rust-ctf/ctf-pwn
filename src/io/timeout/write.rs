@@ -103,22 +103,12 @@ where
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<(), io::Error>> {
         let this = self.project();
-        let r = this.writer.poll_flush(cx);
-        match r {
-            Poll::Pending => this.state.poll_check(cx)?,
-            _ => this.state.reset(),
-        }
-        r
+        this.writer.poll_flush(cx)
     }
 
     fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<(), io::Error>> {
         let this = self.project();
-        let r = this.writer.poll_shutdown(cx);
-        match r {
-            Poll::Pending => this.state.poll_check(cx)?,
-            _ => this.state.reset(),
-        }
-        r
+        this.writer.poll_shutdown(cx)
     }
 
     fn poll_write_vectored(
@@ -127,12 +117,7 @@ where
         bufs: &[io::IoSlice<'_>],
     ) -> Poll<io::Result<usize>> {
         let this = self.project();
-        let r = this.writer.poll_write_vectored(cx, bufs);
-        match r {
-            Poll::Pending => this.state.poll_check(cx)?,
-            _ => this.state.reset(),
-        }
-        r
+        this.writer.poll_write_vectored(cx, bufs)
     }
 
     fn is_write_vectored(&self) -> bool {

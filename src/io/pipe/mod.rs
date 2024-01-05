@@ -4,11 +4,13 @@ mod interactive;
 mod read;
 mod write;
 mod convert;
+mod readwrite;
 
 pub use error::*;
 pub use interactive::*;
 pub use read::*;
 pub use convert::*;
+pub use readwrite::*;
 
 use std::io::Error;
 use std::pin::Pin;

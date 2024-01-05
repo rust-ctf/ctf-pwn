@@ -12,6 +12,10 @@ pub enum PipeError {
     Utf8ParseError(#[from] std::string::FromUtf8Error),
     #[error("format error {0}")]
     FmtError(#[from] std::fmt::Error),
+
+    #[error("recv timeout")]
+    Timeout(),
+
     #[error("unknown error")]
     Unknown,
 }
