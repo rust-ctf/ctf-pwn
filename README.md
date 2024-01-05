@@ -61,7 +61,7 @@ pipe.write_ansi_command(ansi::Down).await?;
 pipe.write_ansi_command(ansi::Right).await?;
 pipe.write_ansi_command(ansi::Enter).await?;
 ```
-#### Interactive shell
+#### Ansi event based interactive shell
 ```rs
 pipe.interactive_ansi().await?;
 ```
