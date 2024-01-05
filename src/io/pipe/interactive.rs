@@ -1,5 +1,5 @@
 use tokio::io::{AsyncRead, AsyncWrite};
-use crate::io::{CacheReader, NcursesTerminalBridge, Pipe, PipeReadExt, PipeWriteExt, ShellTerminalBridge, TerminalBridge, TimeoutReader, TimeoutWriter};
+use crate::io::{CacheReader, NcursesTerminalBridge, Pipe, PipeError, PipeReadExt, PipeWriteExt, ShellTerminalBridge, TerminalBridge, TimeoutReader, TimeoutWriter};
 
 impl<T, R, W> PipeInteractiveExt<R, W> for T
 where
@@ -30,13 +30,13 @@ where
     R: AsyncRead + Send + Unpin,
     W: AsyncWrite + Send + Unpin,
 {
-    async fn interactive_shell(&mut self) -> Result<(), ()> {
+    async fn interactive_shell(&mut self) -> Result<(), PipeError> {
         let (reader, writer) = unsafe { self.split_read_write() };
         ShellTerminalBridge::bridge(reader, writer).await;
         Ok(())
     }
 
-    async fn interactive_ansi(&mut self) -> Result<(), ()> {
+    async fn interactive_ansi(&mut self) -> Result<(), PipeError> {
         let (reader, writer) = unsafe { self.split_read_write() };
         NcursesTerminalBridge::bridge(reader, writer).await;
         Ok(())
