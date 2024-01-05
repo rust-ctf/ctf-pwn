@@ -25,5 +25,3 @@ impl<T> From<FromAsciiError<T>> for PipeError {
         PipeError::AsciiParseError(format!("{value}"))
     }
 }
-
-pub type Result<T> = result::Result<T, PipeError>;
