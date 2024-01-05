@@ -81,4 +81,6 @@ payload
     .recv_until("Something: ")
     .fill("A", 60)
     .send();
+
+pipe.payload(&payload).await?;
 ```
