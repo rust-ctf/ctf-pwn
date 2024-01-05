@@ -1,5 +1,5 @@
 use crate::io::timeout::HasTimeout;
-use crate::io::{Payload, PayloadStep, PipeError};
+use crate::io::PipeError;
 use crossterm::Command;
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 
