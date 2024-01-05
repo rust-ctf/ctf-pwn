@@ -1,4 +1,5 @@
 use std::io::ErrorKind;
+use std::isize;
 use crate::io::cache::HasCache;
 use crate::io::timeout::HasTimeout;
 use crate::io::PipeError;
@@ -40,11 +41,11 @@ pub trait PipeReadExt: AsyncRead + HasCache + HasTimeout + Unpin {
         loop {
             let mut data = [0u8; BLOCK_SIZE];
             match self.read(&mut data).await {
-                Ok(0) => break,
+                Ok(0) => continue,
                 Ok(size) => {
                     let end_len = end.as_ref().len();
                     res.extend_from_slice(&data[..size]);
-                    let start = usize::max(0, res.len() - size - end_len);
+                    let start = isize::max(0, res.len() as isize - size as isize - end_len as isize) as usize;
                     //TODO: Find some more optimal search alghorithm
                     match data[start..]
                         .windows(end_len)
@@ -53,14 +54,14 @@ pub trait PipeReadExt: AsyncRead + HasCache + HasTimeout + Unpin {
                     {
                         None => continue,
                         Some((i, _)) => {
-                            self.cache_insert(&data[start + i + end_len..]);
+                            self.cache_insert(&data[start + i + end_len..size]);
                             let drain_start = if drop { start + i } else { start + i + end_len };
-                            res.drain(drain_start..);
+                            res.drain(res.len() - size + drain_start..);
                             break;
                         }
                     }
                 }
-                Err(_) => break,
+                Err(e) => return Err(e.into()),
             }
         }
 
