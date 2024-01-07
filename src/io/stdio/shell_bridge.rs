@@ -198,9 +198,11 @@ impl<'a, W: AsyncWrite + Unpin> StdoutState<'a, W> {
         println!();
         self.cursor_position = cursor::position()?;
         self.start_position = self.cursor_position;
-        let text = self.text.clone();
+        let mut text = self.text.clone();
         self.text.clear();
 
+        //add newline
+        text.push('\n');
         self.writer.write_all(text.as_bytes()).await?;
         self.writer.flush().await?;
         Ok(())
