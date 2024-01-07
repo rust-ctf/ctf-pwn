@@ -195,14 +195,13 @@ impl<'a, W: AsyncWrite + Unpin> StdoutState<'a, W> {
 
     pub async fn send_data(&mut self) -> TerminalResult<()> {
         self.end()?;
-        println!();
+        self.insert_char('\n')?;
+
         self.cursor_position = cursor::position()?;
         self.start_position = self.cursor_position;
-        let mut text = self.text.clone();
+        let text = self.text.clone();
         self.text.clear();
 
-        //add newline
-        text.push('\n');
         self.writer.write_all(text.as_bytes()).await?;
         self.writer.flush().await?;
         Ok(())
