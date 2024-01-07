@@ -29,8 +29,10 @@ where
         };
 
         let mut stdout = tokio::io::stdout();
+        terminal::disable_raw_mode().unwrap();
         stdout.write_all(&buffer[..n]).await?;
         stdout.flush().await?;
+        terminal::enable_raw_mode().unwrap();
     }
     Ok(())
 }

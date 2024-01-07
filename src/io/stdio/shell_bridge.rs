@@ -5,6 +5,7 @@ use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use ascii::AsciiChar::s;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 use crossterm::cursor::{DisableBlinking, EnableBlinking, MoveTo};
@@ -138,8 +139,10 @@ impl<'a, W: AsyncWrite + Unpin> StdoutState<'a, W> {
 
     pub fn print(&mut self, data: &[u8]) -> TerminalResult<()> {
         self.clear()?;
+        terminal::disable_raw_mode().unwrap();
         stdout().write_all(data)?;
         stdout().flush()?;
+        terminal::enable_raw_mode().unwrap();
         self.start_position = cursor::position()?;
         self.cursor_position = self.start_position;
         self.redraw()?;
@@ -194,13 +197,14 @@ impl<'a, W: AsyncWrite + Unpin> StdoutState<'a, W> {
     }
 
     pub async fn send_data(&mut self) -> TerminalResult<()> {
-        self.end()?;
-        self.insert_char('\n')?;
 
-        self.cursor_position = cursor::position()?;
+        self.end()?;
+        let (_ ,y) = cursor::position()?;
+        self.set_cursor_position(0, y + 1);
         self.start_position = self.cursor_position;
-        let text = self.text.clone();
+        let mut text = self.text.clone();
         self.text.clear();
+        text.push('\n');
 
         self.writer.write_all(text.as_bytes()).await?;
         self.writer.flush().await?;
