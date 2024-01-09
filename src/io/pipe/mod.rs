@@ -34,6 +34,21 @@ pin_project! {
     }
 }
 
+impl<R: AsyncRead,W> AsyncCacheRead for Pipe<R,W>
+{
+    fn poll_reader(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>) -> Poll<std::io::Result<()>> {
+        self.project().reader.poll_reader(cx,buf)
+    }
+
+    fn consume(self: Pin<&mut Self>, amt: usize) {
+        self.project().reader.consume(amt)
+    }
+
+    fn restore(self: Pin<&mut Self>, data: &[u8]) {
+        self.project().reader.restore(data)
+    }
+}
+
 impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
     const DEFAULT_TIMEOUT: Duration = Duration::from_secs(1);
 

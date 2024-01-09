@@ -199,7 +199,9 @@ impl<'a, W: AsyncWrite + Unpin> StdoutState<'a, W> {
     pub async fn send_data(&mut self) -> TerminalResult<()> {
 
         self.end()?;
+        self.redraw()?;
         let (_ ,y) = cursor::position()?;
+        println!();
         self.set_cursor_position(0, y + 1);
         self.start_position = self.cursor_position;
         let mut text = self.text.clone();
