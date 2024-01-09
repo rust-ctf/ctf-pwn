@@ -4,8 +4,6 @@ use crate::io::{AsyncCacheRead, AsyncReadCacheTimeoutExt, AsyncReadTimeoutExt, P
 use ascii::AsciiString;
 use tokio::io::AsyncRead;
 
-const BLOCK_SIZE: usize = 4096;
-
 pub trait PipeRead: AsyncRead + AsyncCacheRead {
     fn get_timeout(&self) -> Duration;
     fn set_timeout(&mut self, timeout: Duration);
@@ -129,3 +127,6 @@ pub trait PipeReadExt: PipeRead {
         Ok(AsciiString::from_ascii(data)?)
     }
 }
+
+
+impl<R: PipeRead + ?Sized> PipeReadExt for R {}

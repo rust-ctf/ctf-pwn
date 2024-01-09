@@ -31,6 +31,26 @@ pin_project! {
         reader: CacheReader<R>,
         #[pin]
         writer: W,
+        timeout: Duration,
+        block_size: usize,
+    }
+}
+
+impl<R: AsyncRead, W> PipeRead for Pipe<R, W> {
+    fn get_timeout(&self) -> Duration {
+        self.timeout
+    }
+
+    fn set_timeout(&mut self, timeout: Duration) {
+        self.timeout = timeout;
+    }
+
+    fn get_block_size(&self) -> usize {
+        self.block_size
+    }
+
+    fn set_block_size(&mut self, block_size: usize) {
+        self.block_size = block_size;
     }
 }
 
@@ -54,11 +74,14 @@ impl<R: AsyncRead, W> AsyncCacheRead for Pipe<R, W> {
 
 impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
     const DEFAULT_TIMEOUT: Duration = Duration::from_secs(1);
+    const DEFAULT_BLOCK_SIZE: usize = 4096;
 
     pub fn new(reader: R, writer: W) -> Pipe<R, W> {
         Pipe {
             reader: CacheReader::new(reader), //CacheReader::new(timeout_reader),
             writer: writer,
+            block_size: Self::DEFAULT_BLOCK_SIZE,
+            timeout: Self::DEFAULT_TIMEOUT,
         }
     }
 }
