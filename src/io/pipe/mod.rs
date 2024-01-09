@@ -1,15 +1,15 @@
 pub mod ansi;
+mod convert;
 mod error;
 mod interactive;
 mod read;
-mod write;
-mod convert;
 mod readwrite;
+mod write;
 
+pub use convert::*;
 pub use error::*;
 pub use interactive::*;
 pub use read::*;
-pub use convert::*;
 pub use readwrite::*;
 
 use std::io::Error;
@@ -21,23 +21,26 @@ use pin_project_lite::pin_project;
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 
-use super::{cache::*, timeout::*};
+use super::cache::*;
 
 pin_project! {
     /// An `AsyncRead`er which applies a timeout to read operations.
     #[derive(Debug)]
     pub struct Pipe<R,W> {
         #[pin]
-        reader: CacheReader<TimeoutReader<R>>,
+        reader: CacheReader<R>,
         #[pin]
-        writer: TimeoutWriter<W>,
+        writer: W,
     }
 }
 
-impl<R: AsyncRead,W> AsyncCacheRead for Pipe<R,W>
-{
-    fn poll_reader(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut ReadBuf<'_>) -> Poll<std::io::Result<()>> {
-        self.project().reader.poll_reader(cx,buf)
+impl<R: AsyncRead, W> AsyncCacheRead for Pipe<R, W> {
+    fn poll_reader(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<std::io::Result<()>> {
+        self.project().reader.poll_reader(cx, buf)
     }
 
     fn consume(self: Pin<&mut Self>, amt: usize) {
@@ -53,15 +56,9 @@ impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
     const DEFAULT_TIMEOUT: Duration = Duration::from_secs(1);
 
     pub fn new(reader: R, writer: W) -> Pipe<R, W> {
-        let mut timeout_reader = TimeoutReader::new(reader);
-        let mut timeout_writer = TimeoutWriter::new(writer);
-
-        timeout_reader.set_read_timeout(Some(Self::DEFAULT_TIMEOUT));
-        timeout_writer.set_read_timeout(Some(Self::DEFAULT_TIMEOUT));
-
         Pipe {
-            reader: CacheReader::new(timeout_reader), //CacheReader::new(timeout_reader),
-            writer: timeout_writer,
+            reader: CacheReader::new(reader), //CacheReader::new(timeout_reader),
+            writer: writer,
         }
     }
 }
@@ -101,36 +98,5 @@ impl<R, W: AsyncWrite> AsyncWrite for Pipe<R, W> {
     ) -> Poll<std::result::Result<(), Error>> {
         let this = self.project();
         this.writer.poll_shutdown(cx)
-    }
-}
-impl<R, W> HasCache for Pipe<R, W> {
-    fn cache_clear(&mut self) {
-        self.reader.cache_clear()
-    }
-
-    fn cache_insert(&mut self, data: &[u8]) {
-        self.reader.cache_insert(data)
-    }
-
-    fn has_cache(&self) -> bool {
-        self.reader.has_cache()
-    }
-}
-
-impl<R, W> HasTimeout for Pipe<R, W> {
-    fn read_timeout(&self) -> Option<Duration> {
-        self.reader.read_timeout()
-    }
-
-    fn set_read_timeout(&mut self, timeout: Option<Duration>) {
-        self.reader.set_read_timeout(timeout)
-    }
-
-    fn write_timeout(&self) -> Option<Duration> {
-        self.writer.write_timeout()
-    }
-
-    fn set_write_timeout(&mut self, timeout: Option<Duration>) {
-        self.writer.set_write_timeout(timeout)
     }
 }

@@ -1,11 +1,10 @@
-use crate::io::timeout::HasTimeout;
 use crate::io::PipeError;
 use crossterm::Command;
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 
-impl<T> PipeWriteExt for T where T: AsyncWrite + HasTimeout + Unpin {}
+impl<T> PipeWriteExt for T where T: AsyncWrite + Unpin {}
 
-pub trait PipeWriteExt: AsyncWrite + HasTimeout + Unpin {
+pub trait PipeWriteExt: AsyncWrite + Unpin {
     async fn write_line<T: AsRef<[u8]>>(&mut self, text: T) -> Result<usize, PipeError> {
         // to_vec is used so we dont accidentally trigger
         // flush if user did not wrap writer into BufWriter
@@ -36,7 +35,6 @@ pub trait PipeWriteExt: AsyncWrite + HasTimeout + Unpin {
         self.flush().await?;
         Ok(())
     }
-
 
     async fn write_ansi_command<T: Command>(&mut self, command: T) -> Result<usize, PipeError> {
         let mut ansi_command = String::new();

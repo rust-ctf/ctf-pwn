@@ -1,8 +1,8 @@
+use crate::io::merge::MergedAsyncReader;
+use crate::io::Pipe;
 use std::{ffi::OsStr, process::Stdio, result};
 use thiserror::*;
 use tokio::process::*;
-use crate::io::merge::MergedAsyncReader;
-use crate::io::Pipe;
 
 #[derive(Error, Debug)]
 pub enum ProcessPipeError {

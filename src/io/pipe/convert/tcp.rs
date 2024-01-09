@@ -1,8 +1,8 @@
+use crate::io::Pipe;
 use tokio::{
     io::Result,
     net::{tcp::*, *},
 };
-use crate::io::Pipe;
 
 pub type TcpPipe = Pipe<OwnedReadHalf, OwnedWriteHalf>;
 

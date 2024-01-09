@@ -1,9 +1,8 @@
 use std::time::Duration;
 use tokio::time::Instant;
 
-
-mod timeout;
 mod cache;
+mod timeout;
 
-pub use timeout::*;
 pub use cache::*;
+pub use timeout::*;

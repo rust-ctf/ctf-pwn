@@ -1,11 +1,11 @@
 use crate::io::stdio::{is_stop_terminal, is_terminate_process, TerminalBridge, TerminalResult};
+use ascii::AsciiChar::s;
 use std::io::stdout;
 use std::io::ErrorKind::TimedOut;
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use ascii::AsciiChar::s;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 use crossterm::cursor::{DisableBlinking, EnableBlinking, MoveTo};
@@ -197,10 +197,9 @@ impl<'a, W: AsyncWrite + Unpin> StdoutState<'a, W> {
     }
 
     pub async fn send_data(&mut self) -> TerminalResult<()> {
-
         self.end()?;
         self.redraw()?;
-        let (_ ,y) = cursor::position()?;
+        let (_, y) = cursor::position()?;
         println!();
         self.set_cursor_position(0, y + 1);
         self.start_position = self.cursor_position;

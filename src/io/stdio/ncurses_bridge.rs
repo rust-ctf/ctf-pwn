@@ -116,7 +116,6 @@ where
         _ => {}
     };
 
-
     writer.flush().await?;
 
     Ok(())

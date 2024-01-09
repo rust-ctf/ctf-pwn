@@ -1,3 +1,4 @@
+use crate::io::util::timeout::get_deadline;
 use pin_project_lite::pin_project;
 use std::future::Future;
 use std::io;
@@ -5,16 +6,19 @@ use std::io::ErrorKind;
 use std::marker::PhantomPinned;
 use std::marker::Unpin;
 use std::pin::Pin;
-use std::task::{Context, Poll, ready};
+use std::task::{ready, Context, Poll};
 use std::time::Duration;
 use tokio::io::{AsyncRead, ReadBuf};
 use tokio::time::Instant;
-use crate::io::util::timeout::get_deadline;
 
 /// A future which can be used to easily read bytes until timeout or buf is fully filled
-pub(crate) fn read_exact_timeout<'a, A>(reader: &'a mut A, buf: &'a mut [u8], timeout: Duration) -> ReadExactTimeout<'a, A>
-    where
-        A: AsyncRead + Unpin + ?Sized,
+pub(crate) fn read_exact_timeout<'a, A>(
+    reader: &'a mut A,
+    buf: &'a mut [u8],
+    timeout: Duration,
+) -> ReadExactTimeout<'a, A>
+where
+    A: AsyncRead + Unpin + ?Sized,
 {
     let deadline = get_deadline(timeout);
     ReadExactTimeout {
@@ -48,8 +52,8 @@ fn eof() -> io::Error {
 }
 
 impl<A> Future for ReadExactTimeout<'_, A>
-    where
-        A: AsyncRead + Unpin + ?Sized,
+where
+    A: AsyncRead + Unpin + ?Sized,
 {
     type Output = io::Result<usize>;
 
@@ -57,16 +61,14 @@ impl<A> Future for ReadExactTimeout<'_, A>
         let me = self.project();
 
         loop {
-            if *me.deadline < Instant::now()
-            {
+            if *me.deadline < Instant::now() {
                 return Poll::Ready(Ok(me.buf.capacity()));
             }
 
             // if our buffer is empty, then we need to read some data to continue.
             let rem = me.buf.remaining();
             if rem != 0 {
-                match ready!(Pin::new(&mut *me.reader).poll_read(cx, me.buf))
-                {
+                match ready!(Pin::new(&mut *me.reader).poll_read(cx, me.buf)) {
                     Ok(_) => {}
                     Err(e) if e.kind() == ErrorKind::TimedOut => {
                         return Poll::Ready(Ok(me.buf.capacity()));

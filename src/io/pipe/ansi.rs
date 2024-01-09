@@ -7,7 +7,6 @@ macro_rules! csi {
     ($( $l:expr ),*) => { concat!("\x1b", $( $l ),*) };
 }
 
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Home;
 impl Command for Home {
