@@ -1,5 +1,5 @@
-use std::task::Poll;
 use pin_project_lite::pin_project;
+use std::task::Poll;
 use tokio::io::*;
 
 //TODO: AutoGenerate MergedOutput for up to ten args
@@ -14,7 +14,6 @@ pin_project! {
     }
 }
 
-
 impl<R1, R2> MergedAsyncReader<R1, R2> {
     pub fn new(stream0: R1, stream1: R2) -> MergedAsyncReader<R1, R2> {
         MergedAsyncReader { stream0, stream1 }
@@ -23,7 +22,7 @@ impl<R1, R2> MergedAsyncReader<R1, R2> {
 
 impl<R1: AsyncRead + Unpin, R2: AsyncRead + Unpin> AsyncRead for MergedAsyncReader<R1, R2> {
     fn poll_read(
-        mut self: std::pin::Pin<&mut Self>,
+        self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
         buf: &mut ReadBuf<'_>,
     ) -> Poll<Result<()>> {
