@@ -1,7 +1,7 @@
 use crate::io::util::timeout::read_until_timeout::{read_until_timeout, ReadUntilTimeout};
-use crate::io::{AsyncCacheRead, AsyncReadTimeoutExt};
+use crate::io::{AsyncCacheRead};
 use std::time::Duration;
-use tokio::io::AsyncRead;
+
 
 pub trait AsyncReadCacheTimeoutExt: AsyncCacheRead {
     fn read_until_timeout<'a, T: AsRef<[u8]>>(

@@ -1,5 +1,5 @@
 use crate::io::stdio::{is_stop_terminal, is_terminate_process, TerminalBridge, TerminalResult};
-use ascii::AsciiChar::s;
+
 use std::io::stdout;
 use std::io::ErrorKind::TimedOut;
 use std::io::Write;

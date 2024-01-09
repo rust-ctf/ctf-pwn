@@ -4,7 +4,7 @@ mod traits;
 pub use traits::*;
 
 use pin_project_lite::pin_project;
-use std::time::Duration;
+
 
 pin_project! {
     /// An `AsyncRead`er which applies a timeout to read operations.

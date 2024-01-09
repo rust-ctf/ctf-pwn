@@ -1,6 +1,6 @@
 use crossterm::Command;
-use std::fmt::Display;
-use std::ops::Range;
+
+
 
 pub trait PayloadWrite {
     fn push<T: AsRef<[u8]>>(&mut self, data: T) -> &mut Self;

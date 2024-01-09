@@ -1,11 +1,11 @@
 use crate::io::cache::CacheReader;
 use crate::io::AsyncCacheRead;
-use ascii::AsciiChar::b;
+
 use std::borrow::BorrowMut;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use tokio::io;
-use tokio::io::{AsyncBufRead, AsyncRead, ReadBuf};
+use tokio::io::{AsyncRead, ReadBuf};
 
 impl<R: AsyncRead> AsyncRead for CacheReader<R> {
     fn poll_read(

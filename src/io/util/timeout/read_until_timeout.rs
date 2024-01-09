@@ -6,9 +6,9 @@ use std::io;
 use std::io::ErrorKind;
 use std::marker::PhantomPinned;
 use std::pin::Pin;
-use std::task::{ready, Context, Poll};
+use std::task::{Context, Poll};
 use std::time::Duration;
-use tokio::io::ReadBuf;
+
 use tokio::time::Instant;
 
 pin_project! {
@@ -50,7 +50,7 @@ impl<R: AsyncCacheRead + ?Sized + Unpin, D: AsRef<[u8]>> Future for ReadUntilTim
     type Output = io::Result<usize>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let mut me = self.project();
+        let me = self.project();
         if *me.deadline < Instant::now() {
             return Err(timeout()).into();
         }

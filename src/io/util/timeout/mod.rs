@@ -11,7 +11,7 @@ pub use read_until_timeout::*;
 use std::time::Duration;
 use tokio::time::Instant;
 
-use tokio::io::AsyncReadExt;
+
 
 pub(crate) fn get_deadline(timeout: Duration) -> Instant {
     Instant::now()

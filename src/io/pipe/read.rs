@@ -1,13 +1,13 @@
-use std::io::ErrorKind;
-use std::isize;
-use std::ops::DerefMut;
+
+
+
 use std::time::Duration;
 
 use crate::io::{
-    AsyncCacheRead, AsyncCacheReadExt, AsyncReadCacheTimeoutExt, AsyncReadTimeoutExt, PipeError,
+    AsyncCacheRead, AsyncReadCacheTimeoutExt, AsyncReadTimeoutExt, PipeError,
 };
 use ascii::AsciiString;
-use tokio::io::{AsyncRead, AsyncReadExt};
+use tokio::io::{AsyncRead};
 
 const BLOCK_SIZE: usize = 4096;
 

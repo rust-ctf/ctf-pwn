@@ -1,5 +1,5 @@
 use ascii::FromAsciiError;
-use std::result;
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]
