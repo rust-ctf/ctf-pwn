@@ -1,6 +1,3 @@
-
-
-
 mod cache;
 mod timeout;
 

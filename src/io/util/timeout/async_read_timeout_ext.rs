@@ -2,7 +2,6 @@ use crate::io::util::timeout::read_exact_timeout::{read_exact_timeout, ReadExact
 use std::time::Duration;
 use tokio::io::AsyncRead;
 
-
 pub trait AsyncReadTimeoutExt: AsyncRead {
     fn read_exact_timeout<'a>(
         &'a mut self,

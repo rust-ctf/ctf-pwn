@@ -5,7 +5,6 @@ pub use traits::*;
 
 use pin_project_lite::pin_project;
 
-
 pin_project! {
     /// An `AsyncRead`er which applies a timeout to read operations.
     #[derive(Debug)]

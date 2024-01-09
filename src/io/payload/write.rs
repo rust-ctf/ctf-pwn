@@ -1,7 +1,5 @@
 use crossterm::Command;
 
-
-
 pub trait PayloadWrite {
     fn push<T: AsRef<[u8]>>(&mut self, data: T) -> &mut Self;
 }

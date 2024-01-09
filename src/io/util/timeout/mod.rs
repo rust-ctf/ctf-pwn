@@ -11,8 +11,6 @@ pub use read_until_timeout::*;
 use std::time::Duration;
 use tokio::time::Instant;
 
-
-
 pub(crate) fn get_deadline(timeout: Duration) -> Instant {
     Instant::now()
         .checked_add(timeout)
