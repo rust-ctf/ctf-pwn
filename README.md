@@ -44,8 +44,8 @@ let mut pipe = Pipe::new(stdin(), stdout());
 let data: Vec<u8> = pipe.recv().await?;
 let data: Vec<u8> = pipe.recv_until("Name:", false).await?;
 let data: Vec<u8> = pipe.recv_until([0x01, 0x02, 0x03], false).await?;
-let data: String = pipe.recvus_line().await?;
-let data: AsciiString = pipe.recvas_line().await?;
+let data: String = pipe.recv_line_utf8().await?;
+let data: AsciiString = pipe.recv_line_ascii().await?;
 ```
 
 ### Interactive shell
