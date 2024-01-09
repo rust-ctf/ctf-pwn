@@ -22,7 +22,7 @@ where
         }
 
         let n = match reader.read(&mut buffer).await {
-            Ok(n) if n == 0 => continue,
+            Ok(n) if n == 0 => break, //EOF
             Ok(n) => n,
             Err(e) if e.kind() == TimedOut => continue,
             Err(e) => return Err(e.into()),
