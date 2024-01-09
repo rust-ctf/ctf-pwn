@@ -154,7 +154,6 @@ impl<'a, W: AsyncWrite + Unpin> StdoutState<'a, W> {
         self.text.insert_str(index, text);
         self.redraw()?;
         self.set_cursor_relative_index(index + text.len())?;
-        println!("\n{text}\n");
         Ok(())
     }
 
