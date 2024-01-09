@@ -1,45 +1,19 @@
-use crate::io::{
-    CacheReader, NcursesTerminalBridge, Pipe, PipeError, PipeRead, PipeWriteExt,
-    ShellTerminalBridge, TerminalBridge,
-};
-use tokio::io::{AsyncRead, AsyncWrite};
+use crate::io::{NcursesTerminalBridge, PipeError, ShellTerminalBridge, TerminalBridge};
+use tokio::io::{AsyncRead, AsyncWrite, split};
 
-impl<T, R, W> PipeInteractiveExt<R, W> for T
-where
-    T: AsyncReadWriteSplit<R, W> + Unpin + PipeRead + PipeWriteExt,
-    R: AsyncRead + Send + Unpin,
-    W: AsyncWrite + Send + Unpin,
-{
-}
+impl<T: AsyncRead + AsyncWrite + Unpin + Send + ?Sized> PipeInteractiveExt for T {}
 
-pub trait AsyncReadWriteSplit<R, W> {
-    unsafe fn split_read_write(&mut self) -> (&mut R, &mut W);
-}
-
-impl<R, W> AsyncReadWriteSplit<CacheReader<R>, W> for Pipe<R, W>
-where
-    R: AsyncRead + Send + Unpin,
-    W: AsyncWrite + Send + Unpin,
-{
-    unsafe fn split_read_write(&mut self) -> (&mut CacheReader<R>, &mut W) {
-        (&mut self.reader, &mut self.writer)
-    }
-}
-
-pub trait PipeInteractiveExt<R, W>: AsyncReadWriteSplit<R, W> + Unpin
-where
-    R: AsyncRead + Send + Unpin,
-    W: AsyncWrite + Send + Unpin,
+pub trait PipeInteractiveExt: AsyncRead + AsyncWrite + Unpin + Send
 {
     async fn interactive_shell(&mut self) -> Result<(), PipeError> {
-        let (reader, writer) = unsafe { self.split_read_write() };
-        ShellTerminalBridge::bridge(reader, writer).await;
+        let (mut reader, mut writer) = split(self);
+        ShellTerminalBridge::bridge(&mut reader, &mut writer).await;
         Ok(())
     }
 
     async fn interactive_ansi(&mut self) -> Result<(), PipeError> {
-        let (reader, writer) = unsafe { self.split_read_write() };
-        NcursesTerminalBridge::bridge(reader, writer).await;
+        let (mut reader, mut writer) = split(self);
+        NcursesTerminalBridge::bridge(&mut reader, &mut writer).await;
         Ok(())
     }
 }
