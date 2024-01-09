@@ -128,5 +128,4 @@ pub trait PipeReadExt: PipeRead {
     }
 }
 
-
 impl<R: PipeRead + ?Sized> PipeReadExt for R {}

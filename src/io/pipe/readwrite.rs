@@ -5,7 +5,8 @@ impl<T> PipeReadWriteExt for T where T: PipeReadExt + PipeWriteExt {}
 
 pub trait PipeReadWriteExt: PipeReadExt + PipeWriteExt {
     async fn payload(&mut self, payload: &Payload) -> Result<usize, PipeError>
-        where Self: Unpin
+    where
+        Self: Unpin,
     {
         let mut size = 0usize;
         for step in payload.steps() {
