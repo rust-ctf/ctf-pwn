@@ -4,13 +4,11 @@ mod segment;
 pub use section::*;
 pub use segment::*;
 
-use crate::parse::{Arch, BinParseError, Endianess, CPU};
+use crate::parse::{Arch, BinParseError, Endian, CPU};
 use ::elf;
 use ::elf::endian::*;
 use ::elf::file::Class;
-use elf::segment::{ProgramHeader, SegmentTable};
 use std::path::Path;
-use std::sync::Arc;
 use tokio::fs;
 
 pub struct Elf {
@@ -47,8 +45,8 @@ impl Elf {
 
 fn parse_arch(meta: &RawElf) -> Arch {
     let endianess = match meta.ehdr.endianness {
-        AnyEndian::Little => Endianess::Little,
-        AnyEndian::Big => Endianess::Big,
+        AnyEndian::Little => Endian::Little,
+        AnyEndian::Big => Endian::Big,
     };
 
     let class = match meta.ehdr.class {

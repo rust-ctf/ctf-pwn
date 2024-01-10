@@ -1,12 +1,10 @@
-use std::sync::Arc;
-
 pub struct Arch {
-    endianess: Endianess,
+    endian: Endian,
     class: Class,
     cpu: CPU,
 }
 
-pub enum Endianess {
+pub enum Endian {
     Little,
     Big,
 }
@@ -33,9 +31,9 @@ pub enum CPU {
 }
 
 impl Arch {
-    pub fn new(endianess: Endianess, class: Class, cpu: CPU) -> Self {
+    pub fn new(endian: Endian, class: Class, cpu: CPU) -> Self {
         Arch {
-            endianess,
+            endian,
             class,
             cpu,
         }
