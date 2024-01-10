@@ -1,10 +1,13 @@
 [package]
 name = "ctf-pwn"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Jovan Pavlovic"]
 description = "Pwn utilities for Rust."
 license = "MIT"
+homepage = "https://github.com/rust-ctf/ctf-pwn"
+repository = "https://github.com/rust-ctf/ctf-pwn"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
