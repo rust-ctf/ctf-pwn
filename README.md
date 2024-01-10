@@ -69,18 +69,17 @@ pipe.interactive_ansi().await?;
 
 ### Payload
 ```rs
-let mut payload = Payload::new();
-payload
-    .recv_until("Name: ")
-    .push("test")
+let payload = Payload::builder()
+    .recv_until("> ")
+    .push("1")
+    .push("\n")
     .send()
-    .push_ansi_command(ansi::Down)
+    .recv_until("Insert card's serial number: ")
+    .push_line("%4919x%7$hn")
     .send()
-    .push_ansi_command(ansi::Enter)
-    .send()
-    .recv_until("Something: ")
-    .fill("A", 60)
-    .send();
+    .recv_regex(r"HTB\{[^\}]+\}")
+    .print()
+    .build();
 
 pipe.payload(&payload).await?;
 ```
