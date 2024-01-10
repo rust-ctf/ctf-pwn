@@ -48,6 +48,12 @@ let data: String = pipe.recv_line_utf8().await?;
 let data: AsciiString = pipe.recv_line_ascii().await?;
 ```
 
+### Regex
+```rs
+let data = pipe.recv_until(r"(Ok)|(Error)", true).await?;
+let flag = pipe.recv_regex_utf8(r"HTB\{[^\}]+\}").await?;
+```
+
 ### Interactive shell
 ```rs
 pipe.interactive_shell().await?;
@@ -61,6 +67,7 @@ pipe.write_ansi_command(ansi::Down).await?;
 pipe.write_ansi_command(ansi::Right).await?;
 pipe.write_ansi_command(ansi::Enter).await?;
 ```
+
 #### Ansi event based interactive shell
 ```rs
 pipe.interactive_ansi().await?;
