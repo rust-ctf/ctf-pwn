@@ -84,7 +84,7 @@ macro_rules! build_fn {
         pub fn build(self) -> Payload {
             self.payload
         }
-    }
+    };
 }
 
 macro_rules! sending_fns {
@@ -175,7 +175,6 @@ impl PayloadBuilder<Initial> {
     reading_fns! {}
     sending_fns! {}
 }
-
 
 impl PayloadBuilder<Stateless> {
     reading_fns! {}
