@@ -95,6 +95,18 @@ macro_rules! sending_fns {
             PayloadBuilder::new(payload)
         }
 
+        pub fn push_line<T: AsRef<[u8]>>(self, data: T) -> PayloadBuilder<Sending> {
+            let mut payload = self.payload;
+            payload.push_line(data);
+            PayloadBuilder::new(payload)
+        }
+
+        pub fn push_line_crlf<T: AsRef<[u8]>>(self, data: T) -> PayloadBuilder<Sending> {
+            let mut payload = self.payload;
+            payload.push_line(data);
+            PayloadBuilder::new(payload)
+        }
+
         pub fn fill_byte(self, byte: u8, count: usize) -> PayloadBuilder<Sending> {
             let mut payload = self.payload;
             payload.fill_byte(byte, count);

@@ -1,4 +1,5 @@
 use crossterm::Command;
+use crate::io::PayloadStep;
 
 pub trait PayloadWrite {
     fn push<T: AsRef<[u8]>>(&mut self, data: T);
@@ -23,6 +24,16 @@ macro_rules! numeric_push_methods {
 }
 
 pub trait PayloadWriteExt: PayloadWrite {
+    fn push_line<T: AsRef<[u8]>>(&mut self, data: T) {
+        self.push(data);
+        self.push("\n");
+    }
+
+    fn push_line_crlf<T: AsRef<[u8]>>(&mut self, data: T) {
+        self.push(data);
+        self.push("\r\n");
+    }
+
     fn fill_byte(&mut self, byte: u8, count: usize) -> &mut Self {
         for _ in 0..count {
             self.push([byte]);
