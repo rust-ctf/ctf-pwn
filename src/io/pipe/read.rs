@@ -41,6 +41,50 @@ pub trait PipeReadExt: PipeRead {
         Ok(buf)
     }
 
+    async fn recv_until_regex(
+        &mut self,
+        pattern: &str,
+        drop: bool,
+    ) -> Result<Vec<u8>, PipeError>
+        where
+            Self: Unpin,
+    {
+        let mut buf = Vec::new();
+        let (_, match_len) = self.read_until_regex_timeout(pattern, &mut buf, self.get_timeout())?.await?;
+        if drop {
+            buf.drain(buf.len() - match_len..);
+        }
+        Ok(buf)
+    }
+
+    async fn recv_regex(
+        &mut self,
+        pattern: &str
+    ) -> Result<Vec<u8>, PipeError>
+        where
+            Self: Unpin,
+    {
+        let mut buf = Vec::new();
+        let (_, match_len) = self.read_until_regex_timeout(pattern, &mut buf, self.get_timeout())?.await?;
+        buf.drain(..buf.len() - match_len);
+        Ok(buf)
+    }
+
+    async fn recv_until_regex_split(
+        &mut self,
+        pattern: &str
+    ) -> Result<(Vec<u8>, Vec<u8>), PipeError>
+        where
+            Self: Unpin,
+    {
+        let mut buf = Vec::new();
+        let (_, match_len) = self.read_until_regex_timeout(pattern, &mut buf, self.get_timeout())?.await?;
+        let (data, mch) = buf.split_at(buf.len() - match_len);
+        Ok((data.to_vec(), mch.to_vec()))
+    }
+
+
+
     async fn recv_line(&mut self) -> Result<Vec<u8>, PipeError>
     where
         Self: Unpin,
@@ -72,6 +116,29 @@ pub trait PipeReadExt: PipeRead {
         Self: Unpin,
     {
         let data = self.recv_until(delim, drop).await?;
+        Ok(String::from_utf8(data)?)
+    }
+
+    async fn recv_until_regex_utf8(
+        &mut self,
+        pattern: &str,
+        drop: bool,
+    ) -> Result<String, PipeError>
+        where
+            Self: Unpin,
+    {
+        let data = self.recv_until_regex(pattern, drop).await?;
+        Ok(String::from_utf8(data)?)
+    }
+
+    async fn recv_regex_utf8(
+        &mut self,
+        pattern: &str
+    ) -> Result<String, PipeError>
+        where
+            Self: Unpin,
+    {
+        let data = self.recv_regex(pattern).await?;
         Ok(String::from_utf8(data)?)
     }
 
@@ -108,6 +175,29 @@ pub trait PipeReadExt: PipeRead {
         Self: Unpin,
     {
         let data = self.recv_until(delim, drop).await?;
+        Ok(AsciiString::from_ascii(data)?)
+    }
+
+    async fn recv_until_regex_ascii(
+        &mut self,
+        pattern: &str,
+        drop: bool,
+    ) -> Result<AsciiString, PipeError>
+        where
+            Self: Unpin,
+    {
+        let data = self.recv_until_regex(pattern, drop).await?;
+        Ok(AsciiString::from_ascii(data)?)
+    }
+
+    async fn recv_regex_ascii(
+        &mut self,
+        pattern: &str
+    ) -> Result<AsciiString, PipeError>
+        where
+            Self: Unpin,
+    {
+        let data = self.recv_regex(pattern).await?;
         Ok(AsciiString::from_ascii(data)?)
     }
 

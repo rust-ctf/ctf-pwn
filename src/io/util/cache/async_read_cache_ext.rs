@@ -1,5 +1,5 @@
 use crate::io::util::cache::read_until::{read_until, ReadUntil};
-use crate::io::AsyncCacheRead;
+use crate::io::{read_until_regex, AsyncCacheRead, ReadUntilRegex};
 
 pub trait AsyncCacheReadExt: AsyncCacheRead {
     fn read_until<'a, T: AsRef<[u8]>>(
@@ -25,6 +25,17 @@ pub trait AsyncCacheReadExt: AsyncCacheRead {
         Self: Unpin,
     {
         read_until(self, b"\r\n", buf)
+    }
+
+    async fn read_until_regex<'a>(
+        &'a mut self,
+        pattern: &str,
+        buf: &'a mut Vec<u8>,
+    ) -> Result<ReadUntilRegex<'a, Self>, regex::Error>
+    where
+        Self: Unpin,
+    {
+        read_until_regex(self, pattern, buf)
     }
 }
 

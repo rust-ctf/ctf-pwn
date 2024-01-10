@@ -8,6 +8,11 @@ pub(crate) enum PayloadStep {
     Data(Vec<u8>),
     Send(),
     ReadUntil(Vec<u8>),
+    ReadUntilRegex(String),
+    ReadRegex(String),
+    ReadLine(),
+    ReadLineCrlf(),
+    Print(),
 }
 
 impl Payload {
@@ -23,6 +28,36 @@ impl Payload {
     pub fn recv_until<T: AsRef<[u8]>>(&mut self, data: T) -> &mut Self {
         self.steps
             .push(PayloadStep::ReadUntil(data.as_ref().to_vec()));
+        self
+    }
+
+    pub fn recv_until_regex(&mut self, pattern: &str) -> &mut Self {
+        self.steps
+            .push(PayloadStep::ReadUntilRegex(pattern.to_string()));
+        self
+    }
+
+    pub fn recv_regex(&mut self, pattern: &str) -> &mut Self {
+        self.steps
+            .push(PayloadStep::ReadRegex(pattern.to_string()));
+        self
+    }
+
+    pub fn recv_line(&mut self) -> &mut Self {
+        self.steps
+            .push(PayloadStep::ReadLine());
+        self
+    }
+
+    pub fn recv_line_crlf(&mut self) -> &mut Self {
+        self.steps
+            .push(PayloadStep::ReadLineCrlf());
+        self
+    }
+
+    pub fn print(&mut self) -> &mut Self {
+        self.steps
+            .push(PayloadStep::Print());
         self
     }
 
