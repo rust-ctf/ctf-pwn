@@ -1,4 +1,4 @@
-use crate::io::payload::builder::{Initial, PayloadBuilder, Stateless};
+use crate::io::payload::builder::{Initial, PayloadBuilder};
 use crate::io::payload::write::PayloadWrite;
 
 pub struct Payload {
