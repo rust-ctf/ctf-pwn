@@ -1,7 +1,7 @@
 use crossterm::Command;
 
 pub trait PayloadWrite {
-    fn push<T: AsRef<[u8]>>(&mut self, data: T) -> &mut Self;
+    fn push<T: AsRef<[u8]>>(&mut self, data: T);
 }
 
 impl<T> PayloadWriteExt for T where T: PayloadWrite {}
@@ -65,7 +65,7 @@ pub trait PayloadWriteExt: PayloadWrite {
     }
 
     // For unsigned integers
-    numeric_push_methods!(push_u8, u16);
+    numeric_push_methods!(push_u8, u8);
     numeric_push_methods!(push_u16, u16);
     numeric_push_methods!(push_u32, u32);
     numeric_push_methods!(push_u64, u64);

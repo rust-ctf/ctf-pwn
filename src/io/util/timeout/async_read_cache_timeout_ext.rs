@@ -1,5 +1,5 @@
 use crate::io::util::timeout::read_until_timeout::{read_until_timeout, ReadUntilTimeout};
-use crate::io::{AsyncCacheRead, read_until_regex_timeout, ReadUntilRegexTimeout};
+use crate::io::{read_until_regex_timeout, AsyncCacheRead, ReadUntilRegexTimeout};
 use std::time::Duration;
 
 pub trait AsyncReadCacheTimeoutExt: AsyncCacheRead {
@@ -21,8 +21,8 @@ pub trait AsyncReadCacheTimeoutExt: AsyncCacheRead {
         buf: &'a mut Vec<u8>,
         timeout: Duration,
     ) -> Result<ReadUntilRegexTimeout<'a, Self>, regex::Error>
-        where
-            Self: Unpin,
+    where
+        Self: Unpin,
     {
         read_until_regex_timeout(self, pattern, buf, timeout)
     }

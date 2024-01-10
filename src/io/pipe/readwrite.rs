@@ -12,15 +12,18 @@ pub trait PipeReadWriteExt: PipeReadExt + PipeWriteExt {
     }
 
     async fn payload_debug(&mut self, payload: &Payload) -> Result<usize, PipeError>
-        where
-            Self: Unpin,
+    where
+        Self: Unpin,
     {
         payload_internal(self, payload, true).await
     }
 }
 
-async fn payload_internal<T:PipeReadWriteExt + Unpin + ?Sized>(this: &mut T, payload: &Payload, debug: bool) -> Result<usize, PipeError>
-{
+async fn payload_internal<T: PipeReadWriteExt + Unpin + ?Sized>(
+    this: &mut T,
+    payload: &Payload,
+    debug: bool,
+) -> Result<usize, PipeError> {
     let mut size = 0usize;
     let mut last_data = None;
     for step in payload.steps() {
@@ -44,15 +47,12 @@ async fn payload_internal<T:PipeReadWriteExt + Unpin + ?Sized>(this: &mut T, pay
                 last_data = Some(data);
             }
             PayloadStep::ReadRegex(pattern) => {
-                if debug
-                {
+                if debug {
                     let (before, data) = this.recv_until_regex_split(pattern).await?;
                     print_to_stdout(&before).await?;
                     print_to_stdout(&data).await?;
                     last_data = Some(data);
-                }
-                else
-                {
+                } else {
                     let data = this.recv_regex(pattern).await?;
                     last_data = Some(data);
                 }
@@ -68,8 +68,7 @@ async fn payload_internal<T:PipeReadWriteExt + Unpin + ?Sized>(this: &mut T, pay
                 last_data = Some(data);
             }
             PayloadStep::Print() => {
-                if let Some(data) = &last_data
-                {
+                if let Some(data) = &last_data {
                     print_to_stdout(&data).await?;
                 }
             }
@@ -80,17 +79,14 @@ async fn payload_internal<T:PipeReadWriteExt + Unpin + ?Sized>(this: &mut T, pay
     Ok(size)
 }
 
-async fn print_debug(data: &[u8], debug: bool) -> tokio::io::Result<()>
-{
-    if debug
-    {
+async fn print_debug(data: &[u8], debug: bool) -> tokio::io::Result<()> {
+    if debug {
         print_to_stdout(&data).await?;
     }
     Ok(())
 }
 
-async fn print_to_stdout(data: &[u8]) -> tokio::io::Result<()>
-{
+async fn print_to_stdout(data: &[u8]) -> tokio::io::Result<()> {
     tokio::io::stdout().write_all(&data).await?;
     tokio::io::stdout().flush().await?;
     println!();

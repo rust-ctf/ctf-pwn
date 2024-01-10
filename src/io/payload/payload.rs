@@ -1,3 +1,4 @@
+use crate::io::payload::builder::{Initial, PayloadBuilder, Stateless};
 use crate::io::payload::write::PayloadWrite;
 
 pub struct Payload {
@@ -20,45 +21,38 @@ impl Payload {
         Payload { steps: Vec::new() }
     }
 
-    pub fn send(&mut self) -> &mut Self {
-        self.steps.push(PayloadStep::Send());
-        self
+    pub fn builder() -> PayloadBuilder<Initial> {
+        PayloadBuilder::new(Payload::new())
     }
 
-    pub fn recv_until<T: AsRef<[u8]>>(&mut self, data: T) -> &mut Self {
+    pub fn send(&mut self) {
+        self.steps.push(PayloadStep::Send());
+    }
+
+    pub fn recv_until<T: AsRef<[u8]>>(&mut self, data: T) {
         self.steps
             .push(PayloadStep::ReadUntil(data.as_ref().to_vec()));
-        self
     }
 
-    pub fn recv_until_regex(&mut self, pattern: &str) -> &mut Self {
+    pub fn recv_until_regex(&mut self, pattern: &str) {
         self.steps
             .push(PayloadStep::ReadUntilRegex(pattern.to_string()));
-        self
     }
 
-    pub fn recv_regex(&mut self, pattern: &str) -> &mut Self {
-        self.steps
-            .push(PayloadStep::ReadRegex(pattern.to_string()));
-        self
+    pub fn recv_regex(&mut self, pattern: &str) {
+        self.steps.push(PayloadStep::ReadRegex(pattern.to_string()));
     }
 
-    pub fn recv_line(&mut self) -> &mut Self {
-        self.steps
-            .push(PayloadStep::ReadLine());
-        self
+    pub fn recv_line(&mut self) {
+        self.steps.push(PayloadStep::ReadLine());
     }
 
-    pub fn recv_line_crlf(&mut self) -> &mut Self {
-        self.steps
-            .push(PayloadStep::ReadLineCrlf());
-        self
+    pub fn recv_line_crlf(&mut self) {
+        self.steps.push(PayloadStep::ReadLineCrlf());
     }
 
-    pub fn print(&mut self) -> &mut Self {
-        self.steps
-            .push(PayloadStep::Print());
-        self
+    pub fn print(&mut self) {
+        self.steps.push(PayloadStep::Print());
     }
 
     pub(crate) fn steps(&self) -> &[PayloadStep] {
@@ -67,7 +61,7 @@ impl Payload {
 }
 
 impl PayloadWrite for Payload {
-    fn push<T: AsRef<[u8]>>(&mut self, data: T) -> &mut Self {
+    fn push<T: AsRef<[u8]>>(&mut self, data: T) {
         match self.steps.last_mut() {
             Some(PayloadStep::Data(p)) => {
                 p.extend_from_slice(data.as_ref());
@@ -76,6 +70,5 @@ impl PayloadWrite for Payload {
                 self.steps.push(PayloadStep::Data(data.as_ref().to_vec()));
             }
         };
-        self
     }
 }
