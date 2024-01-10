@@ -1,4 +1,6 @@
 # ctf-pwn
+[![crate](https://img.shields.io/crates/v/ctf-pwn.svg)](https://crates.io/crates/ctf-pwn)
+
 Pwn utilities for Rust.
 
 ## Features
