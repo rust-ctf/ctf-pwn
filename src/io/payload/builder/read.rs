@@ -1,26 +1,6 @@
-use std::net::Shutdown::Read;
 use crate::io::payload::payloads::{Bytes, Ascii, Utf8, Chain, Initial, ReadPayload, ReadPayloadType, DynamicPayload, Building, SendPayload, Complete};
 use crate::io::{PayloadAction, PayloadBuilder};
 use paste::paste;
-
-// macro_rules! create_payload_fn {
-//     // For methods with a specific trait bound on T
-//     ($method:ident, $trait_bound:path, T $(, $arg:ident : $arg_type:ty)*) => {
-//         pub fn $method<T: $trait_bound>(self $(, $arg: $arg_type)*) -> PayloadBuilder<Chain<P1, SendPayload<Building, A>>,A> {
-//             let payload1 = self.payload.payload1;
-//             let payload2 = self.payload.payload2.$method($($arg),*);
-//             PayloadBuilder::from(Chain::new(payload1, payload2))
-//         }
-//     };
-//     // For methods not requiring a generic type T
-//     ($method:ident $(, $arg:ident : $arg_type:ty)*) => {
-//         pub fn $method(self $(, $arg: $arg_type)*) -> PayloadBuilder<Chain<P1, SendPayload<Building, A>>, A> {
-//             let payload1 = self.payload.payload1;
-//             let payload2 = self.payload.payload2.$method($($arg),*);
-//             PayloadBuilder::from(Chain::new(payload1, payload2))
-//         }
-//     };
-// }
 
 macro_rules! create_payload_builder_fn {
     ($initial_type:ty, $encoding_type:ty, $enum_name:ident, $method:ident $(, $arg:ident : $arg_type:ty : $arg_call:expr)*) => {
@@ -79,7 +59,7 @@ impl<P1: PayloadAction, RP, A> PayloadBuilder<Chain<P1,ReadPayload<RP>>,A>
 }
 
 impl<P, E, R, A> PayloadBuilder<DynamicPayload<P, E, R>,A>
-    where P: PayloadAction<ReturnType=E>, R: PayloadAction<ReturnType=E>
+    where P: PayloadAction<ReturnType=E>, R: PayloadAction
 {
     generate_payload_fns!(DynamicPayload<P, E, R>);
 }

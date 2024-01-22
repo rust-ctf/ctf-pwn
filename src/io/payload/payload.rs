@@ -21,7 +21,12 @@ impl Payload
 
 fn test()
 {
-    let payload = Payload::builder();
+    let payload = Payload::builder()
+        .recv_regex(r"HTB\{[^\}]+\}").payload(|data|
+        {
+            Payload::builder().recv_line().build()
+        })
+        .build();
 }
 
 
