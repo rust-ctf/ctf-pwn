@@ -1,33 +1,25 @@
-use std::marker::PhantomData;
 use crate::io::payload::builder::PayloadBuilder;
 use crate::io::payload::payloads::Initial;
-use crate::io::{PipeRead, PipeWrite, TcpPipe};
 use crate::io::payload::PayloadAction;
+use crate::io::{PipeRead, PipeWrite, TcpPipe};
+use std::marker::PhantomData;
 
-pub struct Payload
-{
-
-}
+pub struct Payload {}
 
 pub struct UnknownArch;
 pub struct X86;
 pub struct X64;
 
-impl Payload
-{
-    pub fn builder() -> PayloadBuilder<Initial, UnknownArch>
-    {
+impl Payload {
+    pub fn builder() -> PayloadBuilder<Initial, UnknownArch> {
         PayloadBuilder::<Initial, UnknownArch>::new()
     }
 }
 
-async fn test()
-{
+async fn test() {
     let payload = Payload::builder()
-        .recv_regex_utf8(r"HTB\{[^\}]+\}").payload(|data|
-        {
-            Payload::builder().recv_line().build()
-        })
+        .recv_regex_utf8(r"HTB\{[^\}]+\}")
+        .payload(|data| Payload::builder().recv_line().build())
         .build();
 
     let mut pipe = TcpPipe::connect("123.123.123.123:80").await.unwrap();
@@ -35,12 +27,7 @@ async fn test()
     payload.execute(&mut pipe).await.unwrap();
 }
 
-async fn aaa<T: PipeWrite + PipeRead + Unpin>(pipe: &mut T)
-{
-
-}
-
-
+async fn aaa<T: PipeWrite + PipeRead + Unpin>(pipe: &mut T) {}
 
 // use crate::io::payload::write::PayloadWrite;
 // use crate::io::payload::write::PayloadWriteExt;
@@ -242,8 +229,6 @@ async fn aaa<T: PipeWrite + PipeRead + Unpin>(pipe: &mut T)
 //         PayloadBuilder::new(payload)
 //     }
 // }
-
-
 
 // use std::marker::PhantomData;
 // use crate::io::payload::steps::{PayloadStep, ReadPayload, SendPayload};

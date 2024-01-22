@@ -1,13 +1,12 @@
-use std::marker::PhantomData;
-use crossterm::Command;
-use tokio::io::AsyncWriteExt;
 use crate::io::{PayloadAction, PipeError, PipeRead, PipeWrite};
+use crossterm::Command;
+use std::marker::PhantomData;
+use tokio::io::AsyncWriteExt;
 
 pub struct Building;
-pub struct  Complete;
+pub struct Complete;
 
-pub struct SendPayload<T, A>
-{
+pub struct SendPayload<T, A> {
     data: Vec<u8>,
     _phantom: PhantomData<T>,
     _phantom_arch: PhantomData<A>,
@@ -27,29 +26,37 @@ macro_rules! numeric_push_methods {
     };
 }
 
-impl<A> SendPayload<Building, A>
-{
-    pub fn new() -> Self
-    {
-        SendPayload { data: Vec::new(), _phantom: PhantomData::default(), _phantom_arch: PhantomData::default()}
+impl<A> SendPayload<Building, A> {
+    pub fn new() -> Self {
+        SendPayload {
+            data: Vec::new(),
+            _phantom: PhantomData::default(),
+            _phantom_arch: PhantomData::default(),
+        }
     }
 
-    pub fn complete(self) -> SendPayload<Complete, A>
-    {
-        SendPayload { data: self.data, _phantom: PhantomData::default(), _phantom_arch: PhantomData::default()}
+    pub fn complete(self) -> SendPayload<Complete, A> {
+        SendPayload {
+            data: self.data,
+            _phantom: PhantomData::default(),
+            _phantom_arch: PhantomData::default(),
+        }
     }
 
-    pub fn push<T: AsRef<[u8]>>(mut self, data: T) -> Self
-    {
+    pub fn push<T: AsRef<[u8]>>(mut self, data: T) -> Self {
         self.data.extend_from_slice(data.as_ref());
-        Self { data: self.data, _phantom: PhantomData::default(), _phantom_arch: PhantomData::default()  }
+        Self {
+            data: self.data,
+            _phantom: PhantomData::default(),
+            _phantom_arch: PhantomData::default(),
+        }
     }
 
-    pub fn push_line<T: AsRef<[u8]>>(self, data: T) -> Self{
+    pub fn push_line<T: AsRef<[u8]>>(self, data: T) -> Self {
         self.push(data).push("\n")
     }
 
-    pub fn push_line_crlf<T: AsRef<[u8]>>(self, data: T) -> Self{
+    pub fn push_line_crlf<T: AsRef<[u8]>>(self, data: T) -> Self {
         self.push(data).push("\r\n")
     }
 
@@ -96,23 +103,25 @@ impl<A> SendPayload<Building, A>
     numeric_push_methods!(push_f64, f64);
 }
 
-impl<A> PayloadAction for SendPayload<Complete, A>
-{
+impl<A> PayloadAction for SendPayload<Complete, A> {
     type ReturnType = ();
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin + ?Sized>(&self, pipe: &mut T) -> Result<Self::ReturnType, PipeError>
-    {
+    async fn execute<T: PipeRead + PipeWrite + Unpin + ?Sized>(
+        &self,
+        pipe: &mut T,
+    ) -> Result<Self::ReturnType, PipeError> {
         pipe.write_all(&self.data).await?;
         Ok(())
     }
 }
 
-impl<A> PayloadAction for SendPayload<Building,A>
-{
+impl<A> PayloadAction for SendPayload<Building, A> {
     type ReturnType = ();
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin + ?Sized>(&self, pipe: &mut T) -> Result<Self::ReturnType, PipeError>
-    {
+    async fn execute<T: PipeRead + PipeWrite + Unpin + ?Sized>(
+        &self,
+        pipe: &mut T,
+    ) -> Result<Self::ReturnType, PipeError> {
         unreachable!()
     }
 }

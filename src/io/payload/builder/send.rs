@@ -1,7 +1,9 @@
-use crossterm::Command;
 use crate::io::payload::builder::PayloadBuilder;
-use crate::io::payload::payloads::{Building, Chain, Complete, DynamicPayload, Initial, ReadPayload, SendPayload};
+use crate::io::payload::payloads::{
+    Building, Chain, Complete, DynamicPayload, Initial, ReadPayload, SendPayload,
+};
 use crate::io::PayloadAction;
+use crossterm::Command;
 macro_rules! create_payload_fn {
     // For methods with a specific trait bound on T
     ($method:ident, $trait_bound:path, T $(, $arg:ident : $arg_type:ty)*) => {
@@ -50,7 +52,7 @@ macro_rules! create_payload_for_numeric {
 }
 
 macro_rules! create_new_payload_for_numeric {
-      ($base_name:ident, $type:ty, $payload_type:ty) => {
+    ($base_name:ident, $type:ty, $payload_type:ty) => {
         paste::item! {
             create_new_payload_fn!([< $base_name _le >], $payload_type, value: $type);
             create_new_payload_fn!([< $base_name _be >], $payload_type, value: $type);
@@ -122,7 +124,6 @@ macro_rules! impl_payload_fns_core {
 //     };
 // }
 
-
 macro_rules! impl_payload_fns {
     ($payload_type:ty) => {
         impl_payload_fns_core!($payload_type);
@@ -149,42 +150,38 @@ macro_rules! impl_payload_fns {
     };
 }
 
-
-impl<A> PayloadBuilder<Initial, A>
-{
+impl<A> PayloadBuilder<Initial, A> {
     impl_payload_fns!(Initial);
 }
 
-impl<P1: PayloadAction, RP, A> PayloadBuilder<Chain<P1,ReadPayload<RP>>,A>
-    where ReadPayload<RP>: PayloadAction
+impl<P1: PayloadAction, RP, A> PayloadBuilder<Chain<P1, ReadPayload<RP>>, A>
+where
+    ReadPayload<RP>: PayloadAction,
 {
     impl_payload_fns!(Chain<P1,ReadPayload<RP>>);
 }
 
-impl<P, E, R, A> PayloadBuilder<DynamicPayload<P, E, R>,A>
-    where P: PayloadAction<ReturnType=E>, R: PayloadAction<ReturnType=E>
+impl<P, E, R, A> PayloadBuilder<DynamicPayload<P, E, R>, A>
+where
+    P: PayloadAction<ReturnType = E>,
+    R: PayloadAction<ReturnType = E>,
 {
     impl_payload_fns!(DynamicPayload<P, E, R>);
 }
 
-impl<P1: PayloadAction, A> PayloadBuilder<Chain<P1,SendPayload<Building, A>>, A>
-{
+impl<P1: PayloadAction, A> PayloadBuilder<Chain<P1, SendPayload<Building, A>>, A> {
     impl_payload_fns!();
 
-    pub fn send(self) -> PayloadBuilder<Chain<P1,SendPayload<Complete, A>>, A>
-    {
+    pub fn send(self) -> PayloadBuilder<Chain<P1, SendPayload<Complete, A>>, A> {
         let payload1 = self.payload.payload1;
         let payload2 = self.payload.payload2.complete();
         PayloadBuilder::from(Chain::new(payload1, payload2))
     }
 }
 
-impl<P1: PayloadAction, A> PayloadBuilder<Chain<P1,SendPayload<Complete, A>>, A>
-{
+impl<P1: PayloadAction, A> PayloadBuilder<Chain<P1, SendPayload<Complete, A>>, A> {
     impl_payload_fns!(Chain<P1,SendPayload<Complete, A>>);
 }
-
-
 
 // create_new_payload_for_numeric!(push_u32, u32, $payload_type);
 // create_new_payload_for_numeric!(push_u64, u64, $payload_type);

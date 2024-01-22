@@ -15,10 +15,10 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 pub use write::*;
 
+use crate::io::PayloadAction;
 use pin_project_lite::pin_project;
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
-use crate::io::PayloadAction;
 
 use super::cache::*;
 
@@ -53,16 +53,15 @@ impl<R: AsyncRead, W> PipeRead for Pipe<R, W> {
     }
 }
 
-impl <R, W:AsyncWrite> PipeWrite for Pipe<R,W>
-{
-}
+impl<R, W: AsyncWrite> PipeWrite for Pipe<R, W> {}
 
-impl<R,W> Pipe<R,W>
-    where Self: PipeRead + PipeWrite
+impl<R, W> Pipe<R, W>
+where
+    Self: PipeRead + PipeWrite,
 {
-    async fn payload<T:PayloadAction>(&mut self, payload: T) -> Result<T::ReturnType, PipeError>
-        where
-            Self: Unpin,
+    async fn payload<T: PayloadAction>(&mut self, payload: T) -> Result<T::ReturnType, PipeError>
+    where
+        Self: Unpin,
     {
         payload.execute(self).await
     }

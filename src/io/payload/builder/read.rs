@@ -1,4 +1,7 @@
-use crate::io::payload::payloads::{Bytes, Ascii, Utf8, Chain, Initial, ReadPayload, ReadPayloadType, DynamicPayload, Building, SendPayload, Complete};
+use crate::io::payload::payloads::{
+    Ascii, Building, Bytes, Chain, Complete, DynamicPayload, Initial, ReadPayload, ReadPayloadType,
+    SendPayload, Utf8,
+};
 use crate::io::{PayloadAction, PayloadBuilder};
 use paste::paste;
 
@@ -46,25 +49,25 @@ macro_rules! generate_payload_fns {
     };
 }
 
-
-impl<A> PayloadBuilder<Initial, A>
-{
+impl<A> PayloadBuilder<Initial, A> {
     generate_payload_fns!(Initial);
 }
 
-impl<P1: PayloadAction, RP, A> PayloadBuilder<Chain<P1,ReadPayload<RP>>,A>
-    where ReadPayload<RP>: PayloadAction
+impl<P1: PayloadAction, RP, A> PayloadBuilder<Chain<P1, ReadPayload<RP>>, A>
+where
+    ReadPayload<RP>: PayloadAction,
 {
     generate_payload_fns!(Chain<P1,ReadPayload<RP>>);
 }
 
-impl<P, E, R, A> PayloadBuilder<DynamicPayload<P, E, R>,A>
-    where P: PayloadAction<ReturnType=E>, R: PayloadAction
+impl<P, E, R, A> PayloadBuilder<DynamicPayload<P, E, R>, A>
+where
+    P: PayloadAction<ReturnType = E>,
+    R: PayloadAction,
 {
     generate_payload_fns!(DynamicPayload<P, E, R>);
 }
 
-impl<P1: PayloadAction, A> PayloadBuilder<Chain<P1,SendPayload<Complete, A>>, A>
-{
+impl<P1: PayloadAction, A> PayloadBuilder<Chain<P1, SendPayload<Complete, A>>, A> {
     generate_payload_fns!(Chain<P1,SendPayload<Complete, A>>);
 }

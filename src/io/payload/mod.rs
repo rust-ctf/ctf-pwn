@@ -1,22 +1,23 @@
-mod payload;
-mod write;
-mod steps;
-mod payloads;
-mod builder;
 mod arch;
+mod builder;
+mod payload;
+mod payloads;
+mod steps;
+mod write;
 
 pub(crate) use builder::*;
 
+use crate::io::{AsyncCacheRead, PipeError, PipeRead, PipeReadExt, PipeWrite, PipeWriteExt};
 pub use payload::*;
 pub use write::*;
-use crate::io::{AsyncCacheRead, PipeError, PipeRead, PipeReadExt, PipeWrite, PipeWriteExt};
 
-
-pub trait PayloadAction
-{
+pub trait PayloadAction {
     type ReturnType;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin >(&self, pipe: &mut T) -> Result<Self::ReturnType, PipeError>;
+    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+        &self,
+        pipe: &mut T,
+    ) -> Result<Self::ReturnType, PipeError>;
 }
 // pub trait RetPayload<T>
 // {

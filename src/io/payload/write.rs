@@ -1,4 +1,4 @@
-use crate::io::{PayloadAction};
+use crate::io::PayloadAction;
 //
 // impl Payload<StDefault,_,_>
 // {
@@ -9,8 +9,6 @@ use crate::io::{PayloadAction};
 //
 // }
 //
-
-
 
 // use crossterm::Command;
 // use crate::io::PayloadStep;

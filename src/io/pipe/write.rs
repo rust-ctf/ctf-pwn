@@ -1,11 +1,9 @@
-use std::time::Duration;
 use crate::io::{AsyncCacheRead, PipeError, PipeRead, PipeReadExt};
 use crossterm::Command;
+use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
 
-pub trait PipeWrite: AsyncWrite {
-
-}
+pub trait PipeWrite: AsyncWrite {}
 
 impl<W: PipeWrite> PipeWriteExt for W {}
 
