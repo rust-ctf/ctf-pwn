@@ -1,6 +1,13 @@
-use crate::io::PipeError;
+use std::time::Duration;
+use crate::io::{AsyncCacheRead, PipeError, PipeRead, PipeReadExt};
 use crossterm::Command;
-use tokio::io::{AsyncWrite, AsyncWriteExt};
+use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
+
+pub trait PipeWrite: AsyncWrite {
+
+}
+
+impl<W: AsyncWrite> PipeWriteExt for W {}
 
 pub trait PipeWriteExt: AsyncWrite {
     async fn write_line<T: AsRef<[u8]>>(&mut self, text: T) -> Result<usize, PipeError>
@@ -57,5 +64,3 @@ pub trait PipeWriteExt: AsyncWrite {
         Ok(size)
     }
 }
-
-impl<W: AsyncWrite + ?Sized> PipeWriteExt for W {}
