@@ -18,8 +18,8 @@ impl<P1: PayloadAction, P2: PayloadAction> PayloadAction for Chain<P1,P2>
 {
     type ReturnType = P2::ReturnType;
 
-    async fn execute<R: PipeRead + Unpin, W: PipeWrite + Unpin>(&self, reader: &mut R, writer: &mut W) -> Result<Self::ReturnType, PipeError> {
-        let _ = self.payload1.execute(reader, writer).await?;
-        self.payload2.execute(reader, writer).await
+    async fn execute<T: PipeRead + PipeWrite + Unpin>(&self, pipe: &mut T) -> Result<Self::ReturnType, PipeError> {
+        let _ = self.payload1.execute(pipe).await?;
+        self.payload2.execute(pipe).await
     }
 }

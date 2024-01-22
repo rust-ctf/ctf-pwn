@@ -17,7 +17,7 @@ impl PayloadAction for Initial
 {
     type ReturnType = ();
 
-    async fn execute<R: PipeRead + Unpin, W: PipeWrite + Unpin>(&self, reader: &mut R, writer: &mut W) -> Result<Self::ReturnType, PipeError> {
+    async fn execute<T: PipeRead + PipeWrite + Unpin + ?Sized>(&self, pipe: &mut T) -> Result<Self::ReturnType, PipeError> {
         Ok(())
     }
 }

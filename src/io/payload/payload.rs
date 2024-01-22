@@ -1,6 +1,8 @@
 use std::marker::PhantomData;
 use crate::io::payload::builder::PayloadBuilder;
 use crate::io::payload::payloads::Initial;
+use crate::io::{PipeRead, PipeWrite, TcpPipe};
+use crate::io::payload::PayloadAction;
 
 pub struct Payload
 {
@@ -19,14 +21,23 @@ impl Payload
     }
 }
 
-fn test()
+async fn test()
 {
     let payload = Payload::builder()
-        .recv_regex(r"HTB\{[^\}]+\}").payload(|data|
+        .recv_regex_utf8(r"HTB\{[^\}]+\}").payload(|data|
         {
             Payload::builder().recv_line().build()
         })
         .build();
+
+    let mut pipe = TcpPipe::connect("123.123.123.123:80").await.unwrap();
+    //aaa(&mut pipe);
+    payload.execute(&mut pipe).await.unwrap();
+}
+
+async fn aaa<T: PipeWrite + PipeRead + Unpin>(pipe: &mut T)
+{
+
 }
 
 

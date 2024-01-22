@@ -100,9 +100,9 @@ impl<A> PayloadAction for SendPayload<Complete, A>
 {
     type ReturnType = ();
 
-    async fn execute<R: PipeRead + Unpin, W: PipeWrite + Unpin>(&self, _reader: &mut R, writer: &mut W) -> Result<Self::ReturnType, PipeError>
+    async fn execute<T: PipeRead + PipeWrite + Unpin + ?Sized>(&self, pipe: &mut T) -> Result<Self::ReturnType, PipeError>
     {
-        writer.write_all(&self.data).await?;
+        pipe.write_all(&self.data).await?;
         Ok(())
     }
 }
@@ -111,7 +111,7 @@ impl<A> PayloadAction for SendPayload<Building,A>
 {
     type ReturnType = ();
 
-    async fn execute<R: PipeRead + Unpin, W: PipeWrite + Unpin>(&self, _reader: &mut R, writer: &mut W) -> Result<Self::ReturnType, PipeError>
+    async fn execute<T: PipeRead + PipeWrite + Unpin + ?Sized>(&self, pipe: &mut T) -> Result<Self::ReturnType, PipeError>
     {
         unreachable!()
     }

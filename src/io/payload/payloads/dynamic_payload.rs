@@ -21,9 +21,9 @@ where P: PayloadAction<ReturnType=E>, T: PayloadAction
 {
     type ReturnType = T::ReturnType;
 
-    async fn execute<R: PipeRead + Unpin, W: PipeWrite + Unpin>(&self, reader: &mut R, writer: &mut W) -> Result<Self::ReturnType, PipeError> {
-        let result = self.prev_payload.execute(reader, writer).await?;
+    async fn execute<T1:PipeRead + PipeWrite + Unpin>(&self, pipe: &mut T1) -> Result<Self::ReturnType, PipeError> {
+        let result = self.prev_payload.execute(pipe).await?;
         let new_payload = (self.action)(result);
-        new_payload.execute(reader, writer).await
+        new_payload.execute(pipe).await
     }
 }

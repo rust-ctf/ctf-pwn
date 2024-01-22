@@ -9,14 +9,14 @@ pub(crate) use builder::*;
 
 pub use payload::*;
 pub use write::*;
-use crate::io::{PipeError, PipeRead, PipeReadExt, PipeWrite};
+use crate::io::{AsyncCacheRead, PipeError, PipeRead, PipeReadExt, PipeWrite, PipeWriteExt};
 
 
 pub trait PayloadAction
 {
     type ReturnType;
 
-    async fn execute<R:PipeRead + Unpin, W:PipeWrite + Unpin>(&self, reader: &mut R, writer: &mut W) -> Result<Self::ReturnType, PipeError>;
+    async fn execute<T: PipeRead + PipeWrite + Unpin >(&self, pipe: &mut T) -> Result<Self::ReturnType, PipeError>;
 }
 // pub trait RetPayload<T>
 // {

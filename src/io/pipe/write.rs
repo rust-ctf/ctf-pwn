@@ -7,7 +7,7 @@ pub trait PipeWrite: AsyncWrite {
 
 }
 
-impl<W: AsyncWrite> PipeWriteExt for W {}
+impl<W: PipeWrite> PipeWriteExt for W {}
 
 pub trait PipeWriteExt: AsyncWrite {
     async fn write_line<T: AsRef<[u8]>>(&mut self, text: T) -> Result<usize, PipeError>
