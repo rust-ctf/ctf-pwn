@@ -21,7 +21,7 @@ impl Payload
 
 fn test()
 {
-    let payload = Payload::builder().push_line(b"dasdas").push("aaaa");
+    let payload = Payload::builder();
 }
 
 

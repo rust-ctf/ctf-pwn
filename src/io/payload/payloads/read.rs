@@ -22,7 +22,7 @@ pub struct ReadPayload<E>
 
 impl<E> ReadPayload<E>
 {
-    pub fn new(read_type: ReadPayloadType) ->  ReadPayload<Bytes>
+    pub fn new(read_type: ReadPayloadType) ->  ReadPayload<E>
     {
         ReadPayload { read_type, _phantom: PhantomData::default() }
     }

@@ -179,6 +179,11 @@ impl<P1: PayloadAction, A> PayloadBuilder<Chain<P1,SendPayload<Building, A>>, A>
     }
 }
 
+impl<P1: PayloadAction, A> PayloadBuilder<Chain<P1,SendPayload<Complete, A>>, A>
+{
+    impl_payload_fns!(Chain<P1,SendPayload<Complete, A>>);
+}
+
 
 
 // create_new_payload_for_numeric!(push_u32, u32, $payload_type);
