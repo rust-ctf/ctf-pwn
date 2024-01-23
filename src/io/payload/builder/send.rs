@@ -1,5 +1,5 @@
 use crate::io::payload::builder::PayloadBuilder;
-use crate::io::{Buildable, Readable, SendCompletable, Sendable, X64, X86};
+use crate::io::*;
 use crossterm::Command;
 
 impl<T: SendCompletable, A> PayloadBuilder<T, A> {
