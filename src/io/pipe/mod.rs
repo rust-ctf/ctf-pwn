@@ -3,20 +3,19 @@ mod convert;
 mod error;
 mod interactive;
 mod read;
-mod readwrite;
 mod write;
 
 pub use convert::*;
 pub use error::*;
 pub use interactive::*;
 pub use read::*;
-pub use readwrite::*;
 
 use std::io::Error;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 pub use write::*;
 
+use crate::io::PayloadAction;
 use pin_project_lite::pin_project;
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
@@ -24,7 +23,6 @@ use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use super::cache::*;
 
 pin_project! {
-    /// An `AsyncRead`er which applies a timeout to read operations.
     #[derive(Debug)]
     pub struct Pipe<R,W> {
         #[pin]
@@ -51,6 +49,20 @@ impl<R: AsyncRead, W> PipeRead for Pipe<R, W> {
 
     fn set_block_size(&mut self, block_size: usize) {
         self.block_size = block_size;
+    }
+}
+
+impl<R, W: AsyncWrite> PipeWrite for Pipe<R, W> {}
+
+impl<R, W> Pipe<R, W>
+where
+    Self: PipeRead + PipeWrite,
+{
+    pub async fn payload<T: PayloadAction>(&mut self, payload: T) -> Result<T::ReturnType, PipeError>
+    where
+        Self: Unpin,
+    {
+        payload.execute(self).await
     }
 }
 

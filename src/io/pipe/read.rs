@@ -11,6 +11,8 @@ pub trait PipeRead: AsyncRead + AsyncCacheRead {
     fn set_block_size(&mut self, block_size: usize);
 }
 
+impl<R: PipeRead> PipeReadExt for R {}
+
 pub trait PipeReadExt: PipeRead {
     async fn recv(&mut self) -> Result<Vec<u8>, PipeError>
     where
@@ -19,6 +21,16 @@ pub trait PipeReadExt: PipeRead {
         let mut data = vec![0u8; self.get_block_size()];
         let _ = self
             .read_exact_timeout(&mut data, self.get_timeout())
+            .await?;
+        Ok(data)
+    }
+
+    async fn recvn(&mut self, len: usize) -> Result<Vec<u8>, PipeError>
+        where
+            Self: Unpin,
+    {
+        let mut data = vec![0u8; len];
+        let _ = self.read_timeout(&mut data, self.get_timeout())
             .await?;
         Ok(data)
     }
@@ -208,5 +220,3 @@ pub trait PipeReadExt: PipeRead {
         Ok(AsciiString::from_ascii(data)?)
     }
 }
-
-impl<R: PipeRead + ?Sized> PipeReadExt for R {}

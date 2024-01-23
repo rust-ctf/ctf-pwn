@@ -3,12 +3,14 @@ mod async_read_timeout_ext;
 mod read_exact_timeout;
 mod read_until_regex_timeout;
 mod read_until_timeout;
+mod read_timeout;
 
 pub use async_read_cache_timeout_ext::*;
 pub use async_read_timeout_ext::*;
 pub use read_exact_timeout::*;
 pub use read_until_regex_timeout::*;
 pub use read_until_timeout::*;
+pub use read_timeout::*;
 
 use std::time::Duration;
 use tokio::time::Instant;

@@ -1,7 +1,7 @@
 use crate::io::{NcursesTerminalBridge, PipeError, ShellTerminalBridge, TerminalBridge};
 use tokio::io::{split, AsyncRead, AsyncWrite};
 
-impl<T: AsyncRead + AsyncWrite + Unpin + Send + ?Sized> PipeInteractiveExt for T {}
+impl<T: AsyncRead + AsyncWrite + Unpin + Send> PipeInteractiveExt for T {}
 
 pub trait PipeInteractiveExt: AsyncRead + AsyncWrite + Unpin + Send {
     async fn interactive_shell(&mut self) -> Result<(), PipeError> {
