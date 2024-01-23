@@ -3,6 +3,7 @@ mod dynamic_payload;
 mod print;
 mod read;
 mod send;
+mod arch;
 
 use crate::io::payload::payloads;
 use crate::io::payload::payloads::{
