@@ -1,5 +1,4 @@
 use crate::io::{PayloadAction, PipeError, PipeRead, PipeWrite, Readable, Sendable};
-use std::io::Read;
 
 pub struct Initial {}
 

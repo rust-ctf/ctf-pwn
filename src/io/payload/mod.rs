@@ -1,15 +1,12 @@
-mod arch;
 mod builder;
-mod payload;
 mod payloads;
-mod steps;
-mod write;
 
 pub(crate) use builder::*;
+pub(crate) use payloads::*;
 
+use crate::io::payload::builder::PayloadBuilder;
+use crate::io::payload::payloads::Initial;
 use crate::io::{AsyncCacheRead, PipeError, PipeRead, PipeReadExt, PipeWrite, PipeWriteExt};
-pub use payload::*;
-pub use write::*;
 
 pub trait PayloadAction {
     type ReturnType;
@@ -19,13 +16,15 @@ pub trait PayloadAction {
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError>;
 }
-// pub trait RetPayload<T>
-// {
-//     async fn execute_ret<R:PipeRead + Unpin, W:PipeWrite + Unpin>(&self, reader: &mut R, writer: &mut W) -> Result<T, PipeError>;
-// }
-//
 
-// async fn execute<R: PipeRead + Unpin, W: PipeWrite + Unpin>(&self, reader: &mut R, writer: &mut W) -> Result<(), PipeError> {
-//     let _ = self.execute_ret(reader,writer).await?;
-//     Ok(())
-// }
+pub struct Payload {}
+
+pub struct UnknownArch;
+pub struct X86;
+pub struct X64;
+
+impl Payload {
+    pub fn builder() -> PayloadBuilder<Initial, UnknownArch> {
+        PayloadBuilder::<Initial, UnknownArch>::new()
+    }
+}

@@ -1,5 +1,6 @@
+use crate::io::payload::builder::PayloadBuilder;
 use crate::io::payload::payloads::{Ascii, Bytes, Chain, ReadPayload, ReadPayloadType, Utf8};
-use crate::io::{PayloadAction, PayloadBuilder, Readable};
+use crate::io::{PayloadAction, Readable};
 
 impl<T: Readable, A> PayloadBuilder<T, A> {
     fn build_payload<E>(
