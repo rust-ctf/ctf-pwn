@@ -19,9 +19,11 @@ impl Payload {
 async fn test() {
     let payload = Payload::builder()
         .recv_regex_utf8(r"HTB\{[^\}]+\}")
-        .print()
-        //.payload(|_data| Payload::builder().recv_line().build())
-        .build();
+        .push(b"")
+        .send()
+        .build()
+        ;
+
 
     let mut pipe = TcpPipe::connect("123.123.123.123:80").await.unwrap();
     //aaa(&mut pipe);

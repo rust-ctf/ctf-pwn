@@ -1,6 +1,4 @@
-use crate::io::{
-    Buildable, PayloadAction, PipeError, PipeRead, PipeWrite, Readable, ReturnsValue, Sendable,
-};
+use crate::io::{Buildable, PayloadAction, PipeError, PipeRead, PipeWrite, Readable, ReturnsValue, Sendable, SendCompletable};
 use crossterm::Command;
 use std::marker::PhantomData;
 use tokio::io::AsyncWriteExt;
@@ -15,12 +13,22 @@ pub struct SendPayload<T, A> {
 }
 
 impl<A> Buildable for SendPayload<Complete, A> {}
+impl<A> Sendable for SendPayload<Complete, A> {}
+
 impl<A> Sendable for SendPayload<Building, A> {
-    fn push<A1, T: AsRef<[u8]>>(self, data: T) -> impl PayloadAction
-    where
+    fn push<A1, T: AsRef<[u8]>>(self, data: T) -> SendPayload<Building, A>
+        where
         Self: Sized,
     {
         self.push_data(data)
+    }
+}
+
+impl<A> SendCompletable for SendPayload<Building,A>
+{
+    fn complete(self) -> SendPayload<Complete, A>
+        where Self: Sized {
+        self.to_complete()
     }
 }
 impl<A> Readable for SendPayload<Complete, A> {}
@@ -57,7 +65,7 @@ impl<A> SendPayload<Building, A> {
         }
     }
 
-    pub fn complete(self) -> SendPayload<Complete, A> {
+    pub fn to_complete(self) -> SendPayload<Complete, A> {
         SendPayload {
             data: self.data,
             _phantom: PhantomData::default(),

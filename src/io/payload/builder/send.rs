@@ -2,8 +2,52 @@ use crate::io::payload::builder::PayloadBuilder;
 use crate::io::payload::payloads::{
     Building, Chain, Complete, DynamicPayload, Initial, ReadPayload, SendPayload,
 };
-use crate::io::PayloadAction;
+use crate::io::{Buildable, PayloadAction, Readable, Sendable, SendCompletable};
 use crossterm::Command;
+
+impl<T: SendCompletable, A> PayloadBuilder<T, A>
+{
+    pub fn send(self) -> PayloadBuilder<impl Buildable + Readable + Sendable, A> {
+        PayloadBuilder::from(self.payload.complete())
+    }
+}
+impl<T: Sendable, A> PayloadBuilder<T, A>
+{
+    pub fn push<D: AsRef<[u8]>>(self, data: D) -> PayloadBuilder<impl SendCompletable, A> {
+        PayloadBuilder::from(self.payload.push::<A,D>(data))
+    }
+
+    pub fn push_line<D: AsRef<[u8]>>(self, data: D) -> PayloadBuilder<impl SendCompletable, A>  {
+        self.push(data).push("\n")
+    }
+
+    pub fn push_line_crlf<D: AsRef<[u8]>>(self, data: D) -> PayloadBuilder<impl SendCompletable, A> {
+        self.push(data).push("\r\n")
+    }
+
+    pub fn fill_byte(self, byte: u8, count: usize) -> PayloadBuilder<impl SendCompletable, A> {
+        let mut data= Vec::new();
+        for _ in 0..count {
+            data.push(byte)
+        }
+        self.push(data)
+    }
+
+    pub fn fill<D: AsRef<[u8]>>(self, data: D, count: usize) -> PayloadBuilder<impl SendCompletable, A> {
+        let mut full_data= Vec::new();
+        for _ in 0..count {
+            full_data.extend_from_slice(data.as_ref())
+        }
+        self.push(full_data)
+    }
+
+    pub fn push_ansi_command<D: Command>(self, command: D) -> PayloadBuilder<impl SendCompletable, A> {
+        let mut ansi = String::new();
+        command.write_ansi(&mut ansi).unwrap();
+        self.push(ansi)
+    }
+}
+
 
 //
 //
