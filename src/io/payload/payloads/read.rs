@@ -1,10 +1,22 @@
-use crate::io::{PayloadAction, PipeError, PipeRead, PipeReadExt, PipeWrite};
+use crate::io::payload::payloads::{Complete, SendPayload};
+use crate::io::{
+    Buildable, PayloadAction, PipeError, PipeRead, PipeReadExt, PipeWrite, Readable, ReturnsValue,
+    Sendable,
+};
 use ascii::AsciiString;
 use std::marker::PhantomData;
 
 pub(crate) struct Bytes;
 pub(crate) struct Utf8;
 pub(crate) struct Ascii;
+
+impl<T> Buildable for ReadPayload<T> where ReadPayload<T>: PayloadAction {}
+
+impl<T> Readable for ReadPayload<T> where ReadPayload<T>: PayloadAction {}
+
+impl<T> Sendable for ReadPayload<T> where ReadPayload<T>: PayloadAction {}
+
+impl<T> ReturnsValue for ReadPayload<T> where ReadPayload<T>: PayloadAction {}
 
 pub enum ReadPayloadType {
     RecvUntil(Vec<u8>, bool),

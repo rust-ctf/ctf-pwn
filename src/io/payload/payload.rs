@@ -19,7 +19,8 @@ impl Payload {
 async fn test() {
     let payload = Payload::builder()
         .recv_regex_utf8(r"HTB\{[^\}]+\}")
-        .payload(|data| Payload::builder().recv_line().build())
+        .print()
+        //.payload(|_data| Payload::builder().recv_line().build())
         .build();
 
     let mut pipe = TcpPipe::connect("123.123.123.123:80").await.unwrap();
@@ -27,7 +28,7 @@ async fn test() {
     payload.execute(&mut pipe).await.unwrap();
 }
 
-async fn aaa<T: PipeWrite + PipeRead + Unpin>(pipe: &mut T) {}
+async fn aaa<T: PipeWrite + PipeRead + Unpin>(_pipe: &mut T) {}
 
 // use crate::io::payload::write::PayloadWrite;
 // use crate::io::payload::write::PayloadWriteExt;

@@ -1,6 +1,10 @@
-use crate::io::{PayloadAction, PipeError, PipeRead, PipeWrite};
+use crate::io::{PayloadAction, PipeError, PipeRead, PipeWrite, Readable, Sendable};
+use std::io::Read;
 
 pub struct Initial {}
+
+impl Sendable for Initial {}
+impl Readable for Initial {}
 
 impl Initial {
     pub fn new() -> Initial {
@@ -13,7 +17,7 @@ impl PayloadAction for Initial {
 
     async fn execute<T: PipeRead + PipeWrite + Unpin + ?Sized>(
         &self,
-        pipe: &mut T,
+        _pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError> {
         Ok(())
     }

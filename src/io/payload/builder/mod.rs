@@ -1,4 +1,6 @@
+mod build;
 mod dynamic_payload;
+mod print;
 mod read;
 mod send;
 
@@ -33,22 +35,14 @@ impl<T, A> PayloadBuilder<T, A> {
     }
 }
 
-impl<A> PayloadBuilder<Initial, A> {}
-
-impl<P1: PayloadAction, E, A> PayloadBuilder<Chain<P1, ReadPayload<E>>, A> {
-    pub fn build(self) -> Chain<P1, ReadPayload<E>> {
-        self.payload
+pub(crate) trait Buildable: PayloadAction {}
+pub(crate) trait Sendable: PayloadAction {
+    fn push<A, T: AsRef<[u8]>>(self, data: T) -> impl PayloadAction
+    where
+        Self: Sized,
+    {
+        Chain::new(self, SendPayload::<Building, A>::new().push::<A, T>(data))
     }
 }
-
-impl<P1: PayloadAction, A> PayloadBuilder<Chain<P1, SendPayload<Complete, A>>, A> {
-    pub fn build(self) -> Chain<P1, SendPayload<Complete, A>> {
-        self.payload
-    }
-}
-
-impl<P, E, T, A> PayloadBuilder<DynamicPayload<P, E, T>, A> {
-    pub fn build(self) -> DynamicPayload<P, E, T> {
-        self.payload
-    }
-}
+pub(crate) trait Readable: PayloadAction {}
+pub(crate) trait ReturnsValue: PayloadAction {}

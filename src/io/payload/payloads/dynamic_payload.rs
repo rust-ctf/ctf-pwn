@@ -1,8 +1,31 @@
-use crate::io::{PayloadAction, PipeError, PipeRead, PipeWrite};
+use crate::io::payload::payloads::{Bytes, Chain, ReadPayload};
+use crate::io::{
+    Buildable, PayloadAction, PipeError, PipeRead, PipeWrite, Readable, ReturnsValue, Sendable,
+};
 
 pub struct DynamicPayload<P, E, R> {
     prev_payload: P,
     action: fn(E) -> R,
+}
+
+impl<P, E, R: Buildable> Buildable for DynamicPayload<P, E, R> where
+    DynamicPayload<P, E, R>: PayloadAction
+{
+}
+
+impl<P, E, R: Sendable> Sendable for DynamicPayload<P, E, R> where
+    DynamicPayload<P, E, R>: PayloadAction
+{
+}
+
+impl<P, E, R: Readable> Readable for DynamicPayload<P, E, R> where
+    DynamicPayload<P, E, R>: PayloadAction
+{
+}
+
+impl<P, E, R: ReturnsValue> ReturnsValue for DynamicPayload<P, E, R> where
+    DynamicPayload<P, E, R>: PayloadAction
+{
 }
 
 impl<P, E, R> DynamicPayload<P, E, R>
