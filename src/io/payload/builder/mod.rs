@@ -4,6 +4,8 @@ mod print;
 mod read;
 mod send;
 mod arch;
+mod convert;
+mod condition;
 
 use crate::io::payload::payloads;
 use crate::io::payload::payloads::{

@@ -5,7 +5,7 @@ use std::fmt::*;
 
 impl<T, A> PayloadBuilder<T, A>
 where
-    T: PayloadAction,
+    T: ReturnsValue,
     T::ReturnType: AsRef<[u8]>,
 {
     pub fn print_bytes(self) -> PayloadBuilder<Print<T, FmtBytes>, A> {
@@ -15,7 +15,7 @@ where
 
 impl<T, A> PayloadBuilder<T, A>
 where
-    T: PayloadAction,
+    T: ReturnsValue,
     T::ReturnType: Display,
 {
     pub fn print(self) -> PayloadBuilder<Print<T, FmtDefault>, A> {
@@ -25,7 +25,7 @@ where
 
 impl<T, A> PayloadBuilder<T, A>
 where
-    T: PayloadAction,
+    T: ReturnsValue,
     T::ReturnType: Debug,
 {
     pub fn print_debug(self) -> PayloadBuilder<Print<T, FmtDebug>, A> {
@@ -35,7 +35,7 @@ where
 
 impl<T, A> PayloadBuilder<T, A>
 where
-    T: PayloadAction,
+    T: ReturnsValue,
     T::ReturnType: LowerHex,
 {
     pub fn print_lower_hex(self) -> PayloadBuilder<Print<T, FmtLowerHex>, A> {
@@ -45,7 +45,7 @@ where
 
 impl<T, A> PayloadBuilder<T, A>
 where
-    T: PayloadAction,
+    T: ReturnsValue,
     T::ReturnType: UpperHex,
 {
     pub fn print_upper_hex(self) -> PayloadBuilder<Print<T, FmtUpperHex>, A> {
@@ -55,7 +55,7 @@ where
 
 impl<T, A> PayloadBuilder<T, A>
 where
-    T: PayloadAction,
+    T: ReturnsValue,
     T::ReturnType: Octal,
 {
     pub fn print_octal(self) -> PayloadBuilder<Print<T, FmtOctal>, A> {
@@ -65,7 +65,7 @@ where
 
 impl<T, A> PayloadBuilder<T, A>
 where
-    T: PayloadAction,
+    T: ReturnsValue,
     T::ReturnType: Binary,
 {
     pub fn print_binary(self) -> PayloadBuilder<Print<T, FmtBinary>, A> {
@@ -75,7 +75,7 @@ where
 
 impl<T, A> PayloadBuilder<T, A>
 where
-    T: PayloadAction,
+    T: ReturnsValue,
     T::ReturnType: Pointer,
 {
     pub fn print_pointer(self) -> PayloadBuilder<Print<T, FmtPointer>, A> {
@@ -85,7 +85,7 @@ where
 
 impl<T, A> PayloadBuilder<T, A>
 where
-    T: PayloadAction,
+    T: ReturnsValue,
     T::ReturnType: LowerExp,
 {
     pub fn print_lower_exp(self) -> PayloadBuilder<Print<T, FmtLowerExp>, A> {
@@ -95,7 +95,7 @@ where
 
 impl<T, A> PayloadBuilder<T, A>
 where
-    T: PayloadAction,
+    T: ReturnsValue,
     T::ReturnType: UpperExp,
 {
     pub fn print_upper_exp(self) -> PayloadBuilder<Print<T, FmtUpperExp>, A> {

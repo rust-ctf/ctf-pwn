@@ -20,7 +20,7 @@ pub trait PipeReadExt: PipeRead {
     {
         let mut data = vec![0u8; self.get_block_size()];
         let _ = self
-            .read_exact_timeout(&mut data, self.get_timeout())
+            .read_timeout(&mut data, self.get_timeout())
             .await?;
         Ok(data)
     }
@@ -31,6 +31,28 @@ pub trait PipeReadExt: PipeRead {
     {
         let mut data = vec![0u8; len];
         let _ = self.read_timeout(&mut data, self.get_timeout())
+            .await?;
+        Ok(data)
+    }
+
+    async fn recv_exact(&mut self) -> Result<Vec<u8>, PipeError>
+        where
+            Self: Unpin,
+    {
+        let mut data = vec![0u8; self.get_block_size()];
+        let _ = self
+            .read_exact_timeout(&mut data, self.get_timeout())
+            .await?;
+        Ok(data)
+    }
+
+    async fn recvn_exact(&mut self, len: usize) -> Result<Vec<u8>, PipeError>
+        where
+            Self: Unpin,
+    {
+        let mut data = vec![0u8; len];
+        let _ = self
+            .read_exact_timeout(&mut data, self.get_timeout())
             .await?;
         Ok(data)
     }

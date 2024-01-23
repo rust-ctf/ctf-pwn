@@ -13,6 +13,32 @@ impl<T: Readable, A> PayloadBuilder<T, A> {
         PayloadBuilder::from(Chain::new(self.payload, ReadPayload::new(read_type)))
     }
 
+    pub fn recv(self) -> PayloadBuilder<Chain<T, ReadPayload<Bytes>>, A>
+    {
+        self.build_payload(ReadPayloadType::Recv())
+    }
+    pub fn recv_utf8(self) -> PayloadBuilder<Chain<T, ReadPayload<Utf8>>, A>
+    {
+        self.build_payload(ReadPayloadType::Recv())
+    }
+    pub fn recv_ascii(self) -> PayloadBuilder<Chain<T, ReadPayload<Ascii>>, A>
+    {
+        self.build_payload(ReadPayloadType::Recv())
+    }
+
+    pub fn recv_exact(self) -> PayloadBuilder<Chain<T, ReadPayload<Bytes>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvExact())
+    }
+    pub fn recv_exact_utf8(self) -> PayloadBuilder<Chain<T, ReadPayload<Utf8>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvExact())
+    }
+    pub fn recv_exact_ascii(self) -> PayloadBuilder<Chain<T, ReadPayload<Ascii>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvExact())
+    }
+
     pub fn recvn(self, len: usize) -> PayloadBuilder<Chain<T, ReadPayload<Bytes>>, A>
     {
         self.build_payload(ReadPayloadType::Recvn(len))
@@ -24,6 +50,19 @@ impl<T: Readable, A> PayloadBuilder<T, A> {
     pub fn recvn_ascii(self, len: usize) -> PayloadBuilder<Chain<T, ReadPayload<Ascii>>, A>
     {
         self.build_payload(ReadPayloadType::Recvn(len))
+    }
+
+    pub fn recvn_exact(self, len: usize) -> PayloadBuilder<Chain<T, ReadPayload<Bytes>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvnExact(len))
+    }
+    pub fn recvn_exact_utf8(self, len: usize) -> PayloadBuilder<Chain<T, ReadPayload<Utf8>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvnExact(len))
+    }
+    pub fn recvn_exact_ascii(self, len: usize) -> PayloadBuilder<Chain<T, ReadPayload<Ascii>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvnExact(len))
     }
 
     pub fn recv_line(self) -> PayloadBuilder<Chain<T, ReadPayload<Bytes>>, A> {

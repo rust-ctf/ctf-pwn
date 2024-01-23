@@ -15,7 +15,9 @@ pub enum PipeError {
     #[error("regex error {0}")]
     RegexError(#[from] regex::Error),
     #[error("recv timeout")]
-    Timeout(),
+    Timeout,
+    #[error("recv timeout")]
+    ConditionFailed,
     #[error("unknown error")]
     Unknown,
 }
