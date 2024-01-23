@@ -1,4 +1,3 @@
-use crate::io::payload::payloads::{Complete, SendPayload};
 use crate::io::{
     Buildable, PayloadAction, PipeError, PipeRead, PipeReadExt, PipeWrite, Readable, ReturnsValue,
     Sendable,
@@ -6,9 +5,9 @@ use crate::io::{
 use ascii::AsciiString;
 use std::marker::PhantomData;
 
-pub(crate) struct Bytes;
-pub(crate) struct Utf8;
-pub(crate) struct Ascii;
+pub struct Bytes;
+pub struct Utf8;
+pub struct Ascii;
 
 impl<T> Buildable for ReadPayload<T> where ReadPayload<T>: PayloadAction {}
 

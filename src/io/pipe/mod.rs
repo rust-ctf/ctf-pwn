@@ -23,7 +23,6 @@ use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use super::cache::*;
 
 pin_project! {
-    /// An `AsyncRead`er which applies a timeout to read operations.
     #[derive(Debug)]
     pub struct Pipe<R,W> {
         #[pin]
@@ -59,7 +58,7 @@ impl<R, W> Pipe<R, W>
 where
     Self: PipeRead + PipeWrite,
 {
-    async fn payload<T: PayloadAction>(&mut self, payload: T) -> Result<T::ReturnType, PipeError>
+    pub async fn payload<T: PayloadAction>(&mut self, payload: T) -> Result<T::ReturnType, PipeError>
     where
         Self: Unpin,
     {

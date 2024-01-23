@@ -18,7 +18,7 @@ pub struct PayloadBuilder<T, A> {
 }
 
 impl<A> PayloadBuilder<Initial, A> {
-    pub(crate) fn new() -> PayloadBuilder<Initial, A> {
+    pub fn new() -> PayloadBuilder<Initial, A> {
         PayloadBuilder::<Initial, A> {
             payload: Initial {},
             _phantom_arch: PhantomData::default(),
@@ -27,7 +27,7 @@ impl<A> PayloadBuilder<Initial, A> {
 }
 
 impl<T: PayloadAction, A> PayloadBuilder<T, A> {
-    pub(crate) fn from(payload: T) -> PayloadBuilder<T, A> {
+    pub fn from(payload: T) -> PayloadBuilder<T, A> {
         PayloadBuilder::<T, A> {
             payload,
             _phantom_arch: PhantomData::default(),
@@ -35,8 +35,8 @@ impl<T: PayloadAction, A> PayloadBuilder<T, A> {
     }
 }
 
-pub(crate) trait Buildable: PayloadAction {}
-pub(crate) trait Sendable: PayloadAction {
+pub trait Buildable: PayloadAction {}
+pub trait Sendable: PayloadAction {
     fn push<A, T: AsRef<[u8]>>(self, data: T) -> impl SendCompletable
     where
         Self: Sized,
@@ -44,9 +44,9 @@ pub(crate) trait Sendable: PayloadAction {
         Chain::new(self, SendPayload::<Building, A>::new().push::<A, T>(data))
     }
 }
-pub(crate) trait SendCompletable: Sendable {
+pub trait SendCompletable: Sendable {
     fn complete(self) -> impl Buildable + Readable + Sendable;
 }
 
-pub(crate) trait Readable: PayloadAction {}
-pub(crate) trait ReturnsValue: PayloadAction {}
+pub trait Readable: PayloadAction {}
+pub trait ReturnsValue: PayloadAction {}
