@@ -10,10 +10,9 @@ impl<P, E, R> Sendable for Convert<P, E, R> where Self: PayloadAction {}
 impl<P, E, R> Readable for Convert<P, E, R> where Self: PayloadAction {}
 impl<P, E, R> ReturnsValue for Convert<P, E, R> where Self: PayloadAction {}
 
-
 impl<P, E, R> Convert<P, E, R>
 where
-    P: PayloadAction<ReturnType = E>
+    P: PayloadAction<ReturnType = E>,
 {
     pub fn new(prev_payload: P, action: fn(E) -> R) -> Convert<P, E, R> {
         Convert {
@@ -25,7 +24,7 @@ where
 
 impl<P, E, T> PayloadAction for Convert<P, E, T>
 where
-    P: PayloadAction<ReturnType = E>
+    P: PayloadAction<ReturnType = E>,
 {
     type ReturnType = T;
 

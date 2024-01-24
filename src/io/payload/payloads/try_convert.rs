@@ -10,10 +10,9 @@ impl<P, E, R> Sendable for TryConvert<P, E, R> where Self: PayloadAction {}
 impl<P, E, R> Readable for TryConvert<P, E, R> where Self: PayloadAction {}
 impl<P, E, R> ReturnsValue for TryConvert<P, E, R> where Self: PayloadAction {}
 
-
 impl<P, E, R> TryConvert<P, E, R>
 where
-    P: PayloadAction<ReturnType = E>
+    P: PayloadAction<ReturnType = E>,
 {
     pub fn new(prev_payload: P, action: fn(E) -> Result<R, PipeError>) -> TryConvert<P, E, R> {
         TryConvert {
@@ -25,7 +24,7 @@ where
 
 impl<P, E, T> PayloadAction for TryConvert<P, E, T>
 where
-    P: PayloadAction<ReturnType = E>
+    P: PayloadAction<ReturnType = E>,
 {
     type ReturnType = T;
 

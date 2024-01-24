@@ -9,8 +9,8 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
 
-use tokio::time::Instant;
 use crate::io::util::timeout::timeout;
+use tokio::time::Instant;
 
 pin_project! {
     /// The delimiter is included in the resulting vector.

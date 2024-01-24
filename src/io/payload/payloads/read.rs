@@ -72,10 +72,11 @@ async fn execute_internal<T, T1: PipeRead + PipeWrite + Unpin>(
         }
         ReadPayloadType::RecvRegex(pattern) => pipe.recv_regex(pattern).await?,
         ReadPayloadType::RecvAll() => pipe.recv_all().await?,
-        ReadPayloadType::RecvAllTimeout(timeout, keep_data) => pipe.recv_all_timeout(*timeout, *keep_data).await?,
+        ReadPayloadType::RecvAllTimeout(timeout, keep_data) => {
+            pipe.recv_all_timeout(*timeout, *keep_data).await?
+        }
         ReadPayloadType::RecvLine() => pipe.recv_line().await?,
         ReadPayloadType::RecvLineCrlf() => pipe.recv_line_crlf().await?,
-
     };
 
     Ok(result)

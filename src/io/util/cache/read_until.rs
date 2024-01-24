@@ -65,13 +65,14 @@ pub(super) fn read_until_internal<R: AsyncCacheRead + ?Sized, D: AsRef<[u8]>>(
     let mut data = ReadBuf::new(&mut read_buf);
     loop {
         data.clear();
-        match ready!(reader.as_mut().poll_reader(cx, &mut data))
-        {
+        match ready!(reader.as_mut().poll_reader(cx, &mut data)) {
             Ok(_) => {}
             Err(e) if e.kind() == ErrorKind::TimedOut => {
                 continue;
             }
-            Err(e) => { return Poll::Ready(Err(e.into())); }
+            Err(e) => {
+                return Poll::Ready(Err(e.into()));
+            }
         }
         let read_len = data.filled().len();
         if read_len == 0 {
