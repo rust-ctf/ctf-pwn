@@ -12,8 +12,8 @@ use crate::unix::{parse_got_from_elf, parse_plt_from_elf};
 pub struct Elf {
     data: Vec<u8>,
     header: FileHeader<AnyEndian>,
-    symbols: Vec<Symbol>,
-    dynamic_symbols: Vec<Symbol>,
+    symbols: HashMap<String, Symbol>,
+    dynamic_symbols: HashMap<String, Symbol>,
     got: HashMap<String, u64>,
     plt: HashMap<String, u64>,
 }
@@ -27,6 +27,12 @@ impl Elf {
         let dynamic_symbols = Symbol::parse_dynamic_symbol_table(&file)?;
         let got = parse_got_from_elf(&file, &dynamic_symbols)?;
         let plt = parse_plt_from_elf(&file, &dynamic_symbols)?;
+        let symbols = symbols.into_iter()
+            .map(|s| (s.name.clone(), s))
+            .collect();
+        let dynamic_symbols = dynamic_symbols.into_iter()
+            .map(|s| (s.name.clone(), s))
+            .collect();
         let header = file.ehdr;
         Ok(Elf {
             data: file_data,
@@ -48,12 +54,12 @@ impl Elf {
         &self.got
     }
 
-    pub fn symbols(&self) -> &[Symbol]
+    pub fn symbols(&self) -> &HashMap<String, Symbol>
     {
         &self.symbols
     }
 
-    pub fn dynamic_symbols(&self) -> &[Symbol]
+    pub fn dynamic_symbols(&self) -> &HashMap<String, Symbol>
     {
         &self.dynamic_symbols
     }
