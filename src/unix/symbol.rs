@@ -42,7 +42,7 @@ impl Symbol {
     }
 
     pub(crate) fn parse_dynamic_symbol_table(file: &ElfBytes<AnyEndian>) -> Result<Vec<Self>, ElfError> {
-        match file.symbol_table()? {
+        match file.dynamic_symbol_table()? {
             None => Ok(Vec::new()),
             Some((table, string_table)) => Self::parse_table(&table, &string_table),
         }
