@@ -29,7 +29,7 @@ where
 {
     type ReturnType = E;
 
-    async fn execute<T1: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T1: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T1,
     ) -> Result<Self::ReturnType, PipeError> {

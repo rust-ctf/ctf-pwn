@@ -162,4 +162,14 @@ impl<T: Readable, A> PayloadBuilder<T, A> {
     ) -> PayloadBuilder<Chain<T, ReadPayload<Ascii>>, A> {
         self.build_payload(ReadPayloadType::RecvRegex(pattern.to_string()))
     }
+
+    pub fn interactive_shell(self) -> PayloadBuilder<Chain<T, ReadPayload<Interactive>>, A>
+    {
+        self.build_payload(ReadPayloadType::InteractiveShell())
+    }
+
+    pub fn interactive_ansi(self) -> PayloadBuilder<Chain<T, ReadPayload<Interactive>>, A>
+    {
+        self.build_payload(ReadPayloadType::InteractiveAnsi())
+    }
 }

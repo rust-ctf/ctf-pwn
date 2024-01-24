@@ -34,7 +34,7 @@ impl<P1: PayloadAction, P2: PayloadAction> Chain<P1, P2> {
 impl<P1: PayloadAction, P2: PayloadAction> PayloadAction for Chain<P1, P2> {
     type ReturnType = P2::ReturnType;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError> {

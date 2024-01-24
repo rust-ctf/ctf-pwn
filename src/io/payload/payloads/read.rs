@@ -9,6 +9,8 @@ pub struct Bytes;
 pub struct Utf8;
 #[derive(Clone)]
 pub struct Ascii;
+#[derive(Clone)]
+pub struct Interactive;
 
 impl<T> Buildable for ReadPayload<T> where ReadPayload<T>: PayloadAction {}
 
@@ -31,6 +33,8 @@ pub enum ReadPayloadType {
     RecvAllTimeout(Duration, bool),
     RecvLine(),
     RecvLineCrlf(),
+    InteractiveShell(),
+    InteractiveAnsi(),
 }
 
 #[derive(Clone)]
@@ -82,6 +86,8 @@ async fn execute_internal<T, T1: PipeRead + PipeWrite + Unpin>(
         }
         ReadPayloadType::RecvLine() => pipe.recv_line().await?,
         ReadPayloadType::RecvLineCrlf() => pipe.recv_line_crlf().await?,
+        ReadPayloadType::InteractiveShell() => unreachable!(),
+        ReadPayloadType::InteractiveAnsi() => unreachable!(),
     };
 
     Ok(result)
@@ -119,5 +125,22 @@ impl PayloadAction for ReadPayload<Ascii> {
     ) -> Result<Self::ReturnType, PipeError> {
         let result = execute_internal(self, pipe).await?;
         Ok(AsciiString::from_ascii(result)?)
+    }
+}
+
+impl PayloadAction for ReadPayload<Interactive>
+{
+    type ReturnType = ();
+
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
+        &self,
+        pipe: &mut T,
+    ) -> Result<Self::ReturnType, PipeError> {
+        match self.read_type {
+            ReadPayloadType::InteractiveShell() => pipe.interactive_shell().await?,
+            ReadPayloadType::InteractiveAnsi() => pipe.interactive_ansi().await?,
+            _ => unreachable!()
+        }
+        Ok(())
     }
 }

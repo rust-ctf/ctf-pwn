@@ -56,7 +56,7 @@ impl<R, W: AsyncWrite> PipeWrite for Pipe<R, W> {}
 
 impl<R, W> Pipe<R, W>
 where
-    Self: PipeRead + PipeWrite,
+    Self: PipeRead + PipeWrite + Send,
 {
     pub async fn payload<T: PayloadAction>(
         &mut self,

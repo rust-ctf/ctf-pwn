@@ -11,7 +11,7 @@ use crate::io::{AsyncCacheRead, PipeError, PipeRead, PipeReadExt, PipeWrite, Pip
 pub trait PayloadAction: Clone {
     type ReturnType: Clone;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError>;

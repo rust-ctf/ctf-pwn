@@ -171,7 +171,7 @@ where
 {
     type ReturnType = P::ReturnType;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError> {
@@ -188,7 +188,7 @@ where
 {
     type ReturnType = P::ReturnType;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError> {
@@ -205,7 +205,7 @@ where
 {
     type ReturnType = P::ReturnType;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError> {
@@ -222,7 +222,7 @@ where
 {
     type ReturnType = P::ReturnType;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError> {
@@ -239,7 +239,7 @@ where
 {
     type ReturnType = P::ReturnType;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError> {
@@ -256,7 +256,7 @@ where
 {
     type ReturnType = P::ReturnType;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError> {
@@ -273,7 +273,7 @@ where
 {
     type ReturnType = P::ReturnType;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError> {
@@ -290,7 +290,7 @@ where
 {
     type ReturnType = P::ReturnType;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError> {
@@ -307,7 +307,7 @@ where
 {
     type ReturnType = P::ReturnType;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError> {
@@ -324,7 +324,7 @@ where
 {
     type ReturnType = P::ReturnType;
 
-    async fn execute<T: PipeRead + PipeWrite + Unpin>(
+    async fn execute<T: PipeRead + PipeWrite + Unpin + Send>(
         &self,
         pipe: &mut T,
     ) -> Result<Self::ReturnType, PipeError> {
