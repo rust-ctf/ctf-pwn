@@ -98,4 +98,6 @@ println!("{flag}");
 let elf = Elf::parse("app_path").await?;
 let got: &HashMap<String, u64> = elf.got();
 let plt: &HashMap<String, u64> = elf.plt();
+let symbols: &HashMap<String, Symbol> = elf.symbols();
+let dynamic_symbols: &HashMap<String, Symbol> = elf.dynamic_symbols();
 ```
