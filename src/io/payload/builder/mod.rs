@@ -41,7 +41,7 @@ impl<T: PayloadAction, A> PayloadBuilder<T, A> {
 
 pub trait Buildable: PayloadAction {}
 pub trait Sendable: PayloadAction {
-    fn push<A, T: AsRef<[u8]>>(self, data: T) -> impl SendCompletable
+    fn push<A: Clone, T: AsRef<[u8]>>(self, data: T) -> impl SendCompletable
     where
         Self: Sized,
     {

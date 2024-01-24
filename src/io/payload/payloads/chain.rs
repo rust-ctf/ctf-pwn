@@ -8,7 +8,7 @@ pub struct Chain<P1, P2> {
 
 impl<P1, P2: Buildable> Buildable for Chain<P1, P2> where Chain<P1, P2>: PayloadAction {}
 impl<P1: PayloadAction, P2: Sendable> Sendable for Chain<P1, P2> {
-    fn push<A, T: AsRef<[u8]>>(self, data: T) -> impl SendCompletable
+    fn push<A: Clone, T: AsRef<[u8]>>(self, data: T) -> impl SendCompletable
     where
         Self: Sized,
     {

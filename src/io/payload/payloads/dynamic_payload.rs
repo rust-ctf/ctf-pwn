@@ -41,7 +41,7 @@ where
 
 impl<P, E, T> PayloadAction for DynamicPayload<P, E, T>
 where
-    P: PayloadAction<ReturnType = E>,
+    P: PayloadAction<ReturnType = E>, E:Clone,
     T: PayloadAction,
 {
     type ReturnType = T::ReturnType;

@@ -20,7 +20,7 @@ impl<T: Sendable> PayloadBuilder<T, X64> {
     }
 }
 
-impl<T: Sendable, A> PayloadBuilder<T, A> {
+impl<T: Sendable, A: Clone> PayloadBuilder<T, A> {
     pub fn push<D: AsRef<[u8]>>(self, data: D) -> PayloadBuilder<impl SendCompletable, A> {
         PayloadBuilder::from(self.payload.push::<A, D>(data))
     }

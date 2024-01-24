@@ -1,7 +1,8 @@
 use crate::io::payload::builder::PayloadBuilder;
 use crate::io::{Condition, PayloadAction, ReturnsValue};
 
-impl<T: ReturnsValue, A> PayloadBuilder<T, A> {
+impl<T: ReturnsValue, A: Clone> PayloadBuilder<T, A>
+{
     pub fn condition(
         self,
         action: fn(&T::ReturnType) -> bool,

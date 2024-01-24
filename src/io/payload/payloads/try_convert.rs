@@ -1,5 +1,6 @@
 use crate::io::*;
 
+#[derive(Clone)]
 pub struct TryConvert<P, E, R> {
     prev_payload: P,
     action: fn(E) -> Result<R, PipeError>,
@@ -24,7 +25,7 @@ where
 
 impl<P, E, T> PayloadAction for TryConvert<P, E, T>
 where
-    P: PayloadAction<ReturnType = E>,
+    P: PayloadAction<ReturnType = E>, E: Clone, T: Clone,
 {
     type ReturnType = T;
 

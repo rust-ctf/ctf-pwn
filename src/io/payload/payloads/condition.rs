@@ -25,7 +25,7 @@ where
 
 impl<P, E> PayloadAction for Condition<P, E>
 where
-    P: PayloadAction<ReturnType = E>,
+    P: PayloadAction<ReturnType = E>, E: Clone
 {
     type ReturnType = E;
 

@@ -25,7 +25,7 @@ where
 
 impl<P, E, T> PayloadAction for Convert<P, E, T>
 where
-    P: PayloadAction<ReturnType = E>,
+    P: PayloadAction<ReturnType = E>, E: Clone, T:Clone
 {
     type ReturnType = T;
 

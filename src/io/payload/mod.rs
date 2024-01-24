@@ -8,8 +8,8 @@ use crate::io::payload::builder::PayloadBuilder;
 use crate::io::payload::payloads::Initial;
 use crate::io::{AsyncCacheRead, PipeError, PipeRead, PipeReadExt, PipeWrite, PipeWriteExt};
 
-pub trait PayloadAction {
-    type ReturnType;
+pub trait PayloadAction: Clone {
+    type ReturnType: Clone;
 
     async fn execute<T: PipeRead + PipeWrite + Unpin>(
         &self,
