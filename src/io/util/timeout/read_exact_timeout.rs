@@ -1,4 +1,4 @@
-use crate::io::util::timeout::get_deadline;
+use crate::io::util::timeout::{eof, get_deadline, timeout};
 use pin_project_lite::pin_project;
 use std::future::Future;
 use std::io;
@@ -16,6 +16,7 @@ pub(crate) fn read_exact_timeout<'a, A>(
     reader: &'a mut A,
     buf: &'a mut [u8],
     timeout: Duration,
+    throw_on_timeout: bool,
 ) -> ReadExactTimeout<'a, A>
 where
     A: AsyncRead + Unpin + ?Sized,
@@ -26,6 +27,7 @@ where
         buf: ReadBuf::new(buf),
         deadline,
         _pin: PhantomPinned,
+        throw_on_timeout,
     }
 }
 
@@ -44,12 +46,10 @@ pin_project! {
         // Make this future `!Unpin` for compatibility with async trait methods.
         #[pin]
         _pin: PhantomPinned,
+        throw_on_timeout: bool,
     }
 }
 
-fn eof() -> io::Error {
-    io::Error::new(ErrorKind::UnexpectedEof, "early eof")
-}
 
 impl<A> Future for ReadExactTimeout<'_, A>
 where
@@ -62,7 +62,11 @@ where
 
         loop {
             if *me.deadline < Instant::now() {
-                return Poll::Ready(Ok(me.buf.capacity()));
+                if *me.throw_on_timeout
+                {
+                    return Poll::Ready(Err(timeout().into()))
+                }
+                return Poll::Ready(Ok(me.buf.filled().len()));
             }
 
             // if our buffer is empty, then we need to read some data to continue.
@@ -71,7 +75,7 @@ where
                 match ready!(Pin::new(&mut *me.reader).poll_read(cx, me.buf)) {
                     Ok(_) => {}
                     Err(e) if e.kind() == ErrorKind::TimedOut => {
-                        return Poll::Ready(Ok(me.buf.capacity()));
+                        continue;
                     }
                     Err(e) => {
                         return Poll::Ready(Err(e.into()));

@@ -10,6 +10,7 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use tokio::time::Instant;
+use crate::io::util::timeout::timeout;
 
 pin_project! {
     /// The delimiter is included in the resulting vector.
@@ -40,10 +41,6 @@ where
         deadline,
         _pin: PhantomPinned,
     }
-}
-
-fn timeout() -> io::Error {
-    io::Error::new(ErrorKind::TimedOut, "early timeout")
 }
 
 impl<R: AsyncCacheRead + ?Sized + Unpin, D: AsRef<[u8]>> Future for ReadUntilTimeout<'_, R, D> {

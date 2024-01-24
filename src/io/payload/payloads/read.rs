@@ -1,6 +1,7 @@
 use crate::io::*;
 use ascii::AsciiString;
 use std::marker::PhantomData;
+use std::time::Duration;
 
 pub struct Bytes;
 pub struct Utf8;
@@ -16,12 +17,14 @@ impl<T> ReturnsValue for ReadPayload<T> where ReadPayload<T>: PayloadAction {}
 
 pub enum ReadPayloadType {
     Recv(),
-    RecvExact(),
     Recvn(usize),
+    RecvnFill(usize),
     RecvnExact(usize),
     RecvUntil(Vec<u8>, bool),
     RecvUntilRegex(String, bool),
     RecvRegex(String),
+    RecvAll(),
+    RecvAllTimeout(Duration, bool),
     RecvLine(),
     RecvLineCrlf(),
 }
@@ -60,16 +63,19 @@ async fn execute_internal<T, T1: PipeRead + PipeWrite + Unpin>(
 ) -> Result<Vec<u8>, PipeError> {
     let result = match &this.read_type {
         ReadPayloadType::Recv() => pipe.recv().await?,
-        ReadPayloadType::RecvExact() => pipe.recv_exact().await?,
         ReadPayloadType::Recvn(len) => pipe.recvn(*len).await?,
+        ReadPayloadType::RecvnFill(len) => pipe.recvn_fill(*len).await?,
         ReadPayloadType::RecvnExact(len) => pipe.recvn_exact(*len).await?,
         ReadPayloadType::RecvUntil(delim, drop) => pipe.recv_until(delim, *drop).await?,
         ReadPayloadType::RecvUntilRegex(pattern, drop) => {
             pipe.recv_until_regex(pattern, *drop).await?
         }
         ReadPayloadType::RecvRegex(pattern) => pipe.recv_regex(pattern).await?,
+        ReadPayloadType::RecvAll() => pipe.recv_all().await?,
+        ReadPayloadType::RecvAllTimeout(timeout, keep_data) => pipe.recv_all_timeout(*timeout, *keep_data).await?,
         ReadPayloadType::RecvLine() => pipe.recv_line().await?,
         ReadPayloadType::RecvLineCrlf() => pipe.recv_line_crlf().await?,
+
     };
 
     Ok(result)

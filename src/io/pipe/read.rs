@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::io::{AsyncCacheRead, AsyncReadCacheTimeoutExt, AsyncReadTimeoutExt, PipeError};
 use ascii::AsciiString;
-use tokio::io::AsyncRead;
+use tokio::io::{AsyncRead, AsyncReadExt};
 
 pub trait PipeRead: AsyncRead + AsyncCacheRead {
     fn get_timeout(&self) -> Duration;
@@ -25,6 +25,29 @@ pub trait PipeReadExt: PipeRead {
         Ok(data)
     }
 
+    async fn recv_all(&mut self) -> Result<Vec<u8>, PipeError>
+        where
+            Self: Unpin,
+    {
+        let mut data = vec![];
+        let _ = self
+            .read_to_end(&mut data)
+            .await?;
+        Ok(data)
+    }
+
+    async fn recv_all_timeout(&mut self, timeout: Duration, keep_data: bool) -> Result<Vec<u8>, PipeError>
+        where
+            Self: Unpin,
+    {
+        let mut data = vec![];
+        let _ = self
+            .read_to_end_timeout(&mut data, timeout, !keep_data)
+            .await?;
+        Ok(data)
+    }
+
+
     async fn recvn(&mut self, len: usize) -> Result<Vec<u8>, PipeError>
         where
             Self: Unpin,
@@ -35,13 +58,13 @@ pub trait PipeReadExt: PipeRead {
         Ok(data)
     }
 
-    async fn recv_exact(&mut self) -> Result<Vec<u8>, PipeError>
+    async fn recvn_fill(&mut self, len: usize) -> Result<Vec<u8>, PipeError>
         where
             Self: Unpin,
     {
-        let mut data = vec![0u8; self.get_block_size()];
+        let mut data = vec![0u8; len];
         let _ = self
-            .read_exact_timeout(&mut data, self.get_timeout())
+            .read_fill_timeout(&mut data, self.get_timeout())
             .await?;
         Ok(data)
     }

@@ -1,3 +1,4 @@
+use std::time::Duration;
 use crate::io::payload::builder::PayloadBuilder;
 use crate::io::payload::payloads::{Ascii, Bytes, Chain, ReadPayload, ReadPayloadType, Utf8};
 use crate::io::*;
@@ -26,19 +27,6 @@ impl<T: Readable, A> PayloadBuilder<T, A> {
         self.build_payload(ReadPayloadType::Recv())
     }
 
-    pub fn recv_exact(self) -> PayloadBuilder<Chain<T, ReadPayload<Bytes>>, A>
-    {
-        self.build_payload(ReadPayloadType::RecvExact())
-    }
-    pub fn recv_exact_utf8(self) -> PayloadBuilder<Chain<T, ReadPayload<Utf8>>, A>
-    {
-        self.build_payload(ReadPayloadType::RecvExact())
-    }
-    pub fn recv_exact_ascii(self) -> PayloadBuilder<Chain<T, ReadPayload<Ascii>>, A>
-    {
-        self.build_payload(ReadPayloadType::RecvExact())
-    }
-
     pub fn recvn(self, len: usize) -> PayloadBuilder<Chain<T, ReadPayload<Bytes>>, A>
     {
         self.build_payload(ReadPayloadType::Recvn(len))
@@ -63,6 +51,45 @@ impl<T: Readable, A> PayloadBuilder<T, A> {
     pub fn recvn_exact_ascii(self, len: usize) -> PayloadBuilder<Chain<T, ReadPayload<Ascii>>, A>
     {
         self.build_payload(ReadPayloadType::RecvnExact(len))
+    }
+
+    pub fn recvn_fill(self, len: usize) -> PayloadBuilder<Chain<T, ReadPayload<Bytes>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvnFill(len))
+    }
+    pub fn recvn_fill_utf8(self, len: usize) -> PayloadBuilder<Chain<T, ReadPayload<Utf8>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvnFill(len))
+    }
+    pub fn recvn_fill_ascii(self, len: usize) -> PayloadBuilder<Chain<T, ReadPayload<Ascii>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvnFill(len))
+    }
+
+    pub fn recv_all(self) -> PayloadBuilder<Chain<T, ReadPayload<Bytes>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvAll())
+    }
+    pub fn recv_all_utf8(self) -> PayloadBuilder<Chain<T, ReadPayload<Utf8>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvAll())
+    }
+    pub fn recv_all_ascii(self) -> PayloadBuilder<Chain<T, ReadPayload<Ascii>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvAll())
+    }
+
+    pub fn recv_all_timeout(self, timeout: Duration, keep_data: bool) -> PayloadBuilder<Chain<T, ReadPayload<Bytes>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvAllTimeout(timeout, keep_data))
+    }
+    pub fn recv_all_timeout_utf8(self, timeout: Duration, keep_data: bool) -> PayloadBuilder<Chain<T, ReadPayload<Utf8>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvAllTimeout(timeout, keep_data))
+    }
+    pub fn recv_all_timeout_ascii(self, timeout: Duration, keep_data: bool) -> PayloadBuilder<Chain<T, ReadPayload<Ascii>>, A>
+    {
+        self.build_payload(ReadPayloadType::RecvAllTimeout(timeout, keep_data))
     }
 
     pub fn recv_line(self) -> PayloadBuilder<Chain<T, ReadPayload<Bytes>>, A> {
