@@ -50,7 +50,6 @@ pin_project! {
     }
 }
 
-
 impl<A> Future for ReadExactTimeout<'_, A>
 where
     A: AsyncRead + Unpin + ?Sized,
@@ -62,9 +61,8 @@ where
 
         loop {
             if *me.deadline < Instant::now() {
-                if *me.throw_on_timeout
-                {
-                    return Poll::Ready(Err(timeout().into()))
+                if *me.throw_on_timeout {
+                    return Poll::Ready(Err(timeout().into()));
                 }
                 return Poll::Ready(Ok(me.buf.filled().len()));
             }

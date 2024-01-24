@@ -58,7 +58,10 @@ impl<R, W> Pipe<R, W>
 where
     Self: PipeRead + PipeWrite,
 {
-    pub async fn payload<T: PayloadAction>(&mut self, payload: T) -> Result<T::ReturnType, PipeError>
+    pub async fn payload<T: PayloadAction>(
+        &mut self,
+        payload: T,
+    ) -> Result<T::ReturnType, PipeError>
     where
         Self: Unpin,
     {

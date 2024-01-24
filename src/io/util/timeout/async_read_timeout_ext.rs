@@ -1,17 +1,13 @@
 use crate::io::util::timeout::read_exact_timeout::{read_exact_timeout, ReadExactTimeout};
+use crate::io::util::timeout::read_to_end_timeout::{read_to_end_timeout, ReadToEndTimeout};
+use crate::io::{read_timeout, ReadTimeout};
 use std::time::Duration;
 use tokio::io::AsyncRead;
-use crate::io::{read_timeout, ReadTimeout};
-use crate::io::util::timeout::read_to_end_timeout::{read_to_end_timeout, ReadToEndTimeout};
 
 pub trait AsyncReadTimeoutExt: AsyncRead {
-    fn read_timeout<'a>(
-        &'a mut self,
-        buf: &'a mut [u8],
-        timeout: Duration,
-    ) -> ReadTimeout<'a, Self>
-        where
-            Self: Unpin,
+    fn read_timeout<'a>(&'a mut self, buf: &'a mut [u8], timeout: Duration) -> ReadTimeout<'a, Self>
+    where
+        Self: Unpin,
     {
         read_timeout(self, buf, timeout)
     }
@@ -21,8 +17,8 @@ pub trait AsyncReadTimeoutExt: AsyncRead {
         buf: &'a mut [u8],
         timeout: Duration,
     ) -> ReadExactTimeout<'a, Self>
-        where
-            Self: Unpin,
+    where
+        Self: Unpin,
     {
         read_exact_timeout(self, buf, timeout, false)
     }
@@ -38,10 +34,12 @@ pub trait AsyncReadTimeoutExt: AsyncRead {
         read_exact_timeout(self, buf, timeout, true)
     }
 
-
-
-    fn read_to_end_timeout<'a>(&'a mut self, buf: &'a mut Vec<u8>, timeout: Duration, throw_on_timeout: bool)
-    -> ReadToEndTimeout<'a, Self>
+    fn read_to_end_timeout<'a>(
+        &'a mut self,
+        buf: &'a mut Vec<u8>,
+        timeout: Duration,
+        throw_on_timeout: bool,
+    ) -> ReadToEndTimeout<'a, Self>
     where
         Self: Unpin,
     {

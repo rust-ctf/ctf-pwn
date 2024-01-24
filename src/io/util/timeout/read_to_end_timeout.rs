@@ -17,8 +17,8 @@ pub(crate) fn read_to_end_timeout<'a, A>(
     timeout: Duration,
     throw_on_timeout: bool,
 ) -> ReadToEndTimeout<'a, A>
-    where
-        A: AsyncRead + Unpin + ?Sized,
+where
+    A: AsyncRead + Unpin + ?Sized,
 {
     let deadline = get_deadline(timeout);
     ReadToEndTimeout {
@@ -45,8 +45,8 @@ pin_project! {
 }
 
 impl<A> Future for ReadToEndTimeout<'_, A>
-    where
-        A: AsyncRead + Unpin + ?Sized,
+where
+    A: AsyncRead + Unpin + ?Sized,
 {
     type Output = io::Result<usize>;
 
@@ -56,9 +56,8 @@ impl<A> Future for ReadToEndTimeout<'_, A>
         let mut data = ReadBuf::new(&mut read_buf);
         loop {
             if *me.deadline < Instant::now() {
-                if *me.throw_on_timeout
-                {
-                    return Poll::Ready(Err(timeout().into()))
+                if *me.throw_on_timeout {
+                    return Poll::Ready(Err(timeout().into()));
                 }
                 break;
             }
