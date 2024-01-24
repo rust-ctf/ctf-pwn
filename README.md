@@ -19,7 +19,7 @@ Pwn utilities for Rust.
 * [ ] Risc-V
 
 ### Binary Parsing
-* [ ] Elf
+* [x] Elf
 * [ ] PE
 
 ## Examples
@@ -91,4 +91,11 @@ let payload = Payload::builder()
 
 let flag = pipe.payload(payload).await?;
 println!("{flag}");
+```
+
+### Elf
+```rust
+let elf = Elf::parse("app_path").await?;
+let got: &HashMap<String, u64> = elf.got();
+let plt: &HashMap<String, u64> = elf.plt();
 ```
