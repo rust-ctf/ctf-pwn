@@ -62,7 +62,7 @@ pub(super) fn read_until_regex_internal<R: AsyncCacheRead + ?Sized>(
     let mut data = ReadBuf::new(&mut read_buf);
     loop {
         data.clear();
-        ready!(reader.as_mut().poll_reader(cx, &mut data))?;
+        ready!(reader.as_mut().poll_read(cx, &mut data))?;
         let read_len = data.filled().len();
         if read_len == 0 {
             return Err(eof()).into();
