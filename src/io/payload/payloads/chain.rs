@@ -1,5 +1,6 @@
 use crate::io::*;
 
+#[derive(Clone)]
 pub struct Chain<P1, P2> {
     pub payload1: P1,
     pub payload2: P2,

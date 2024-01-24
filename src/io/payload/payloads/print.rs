@@ -2,17 +2,28 @@ use crate::io::*;
 use std::fmt::{Binary, Debug, Display, LowerExp, LowerHex, Octal, Pointer, UpperExp, UpperHex};
 use std::marker::PhantomData;
 
+#[derive(Clone)]
 pub struct FmtDefault;
+#[derive(Clone)]
 pub struct FmtBytes;
+#[derive(Clone)]
 pub struct FmtDebug;
+#[derive(Clone)]
 pub struct FmtLowerHex;
+#[derive(Clone)]
 pub struct FmtUpperHex;
+#[derive(Clone)]
 pub struct FmtOctal;
+#[derive(Clone)]
 pub struct FmtBinary;
+#[derive(Clone)]
 pub struct FmtPointer;
+#[derive(Clone)]
 pub struct FmtLowerExp;
+#[derive(Clone)]
 pub struct FmtUpperExp;
 
+#[derive(Clone)]
 pub struct Print<P, M> {
     payload: P,
     _phantom: PhantomData<M>,

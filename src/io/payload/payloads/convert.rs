@@ -1,5 +1,6 @@
 use crate::io::*;
 
+#[derive(Clone)]
 pub struct Convert<P, E, R> {
     prev_payload: P,
     action: fn(E) -> R,

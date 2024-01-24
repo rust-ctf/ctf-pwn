@@ -15,6 +15,7 @@ use crate::io::*;
 use crossterm::Command;
 use std::marker::PhantomData;
 
+#[derive(Clone)]
 pub struct PayloadBuilder<T, A> {
     payload: T,
     _phantom_arch: PhantomData<A>,

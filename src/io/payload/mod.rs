@@ -17,10 +17,14 @@ pub trait PayloadAction {
     ) -> Result<Self::ReturnType, PipeError>;
 }
 
+#[derive(Clone)]
 pub struct Payload {}
 
+#[derive(Clone)]
 pub struct UnknownArch;
+#[derive(Clone)]
 pub struct X86;
+#[derive(Clone)]
 pub struct X64;
 
 impl Payload {

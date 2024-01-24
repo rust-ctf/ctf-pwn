@@ -1,5 +1,6 @@
 use crate::io::*;
 
+#[derive(Clone)]
 pub struct Condition<P, E> {
     prev_payload: P,
     action: fn(&E) -> bool,

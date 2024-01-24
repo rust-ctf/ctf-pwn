@@ -1,4 +1,6 @@
 use crate::io::*;
+
+#[derive(Clone)]
 pub struct Initial {}
 
 impl Sendable for Initial {}

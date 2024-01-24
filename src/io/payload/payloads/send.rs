@@ -2,9 +2,11 @@ use crate::io::*;
 use std::marker::PhantomData;
 use tokio::io::AsyncWriteExt;
 
+#[derive(Clone)]
 pub struct Building;
+#[derive(Clone)]
 pub struct Complete;
-
+#[derive(Clone)]
 pub struct SendPayload<T, A> {
     data: Vec<u8>,
     _phantom: PhantomData<T>,

@@ -3,8 +3,11 @@ use ascii::AsciiString;
 use std::marker::PhantomData;
 use std::time::Duration;
 
+#[derive(Clone)]
 pub struct Bytes;
+#[derive(Clone)]
 pub struct Utf8;
+#[derive(Clone)]
 pub struct Ascii;
 
 impl<T> Buildable for ReadPayload<T> where ReadPayload<T>: PayloadAction {}
@@ -15,6 +18,7 @@ impl<T> Sendable for ReadPayload<T> where ReadPayload<T>: PayloadAction {}
 
 impl<T> ReturnsValue for ReadPayload<T> where ReadPayload<T>: PayloadAction {}
 
+#[derive(Clone)]
 pub enum ReadPayloadType {
     Recv(),
     Recvn(usize),
@@ -29,6 +33,7 @@ pub enum ReadPayloadType {
     RecvLineCrlf(),
 }
 
+#[derive(Clone)]
 pub struct ReadPayload<E> {
     read_type: ReadPayloadType,
     _phantom: PhantomData<E>,
