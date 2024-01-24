@@ -16,8 +16,8 @@ impl<P, F, R> ReturnsValue for TryConvert<P, F, R> where Self: PayloadAction {}
 impl<P, F, R> TryConvert<P, F, R>
 where
     P: ReturnsValue,
-    F: Fn(P::ReturnType) -> Result<R, PipeError> + Copy,
-    R: Copy
+    F: Fn(P::ReturnType) -> Result<R, PipeError> + Clone,
+    R: Clone
 {
     pub fn new(prev_payload: P, action: F) -> TryConvert<P, F, R>
     {
@@ -32,7 +32,7 @@ where
 impl<P, F, R> PayloadAction for TryConvert<P, F, R>
 where
     P: ReturnsValue,
-    F: Fn(P::ReturnType) -> Result<R, PipeError> + Copy,
+    F: Fn(P::ReturnType) -> Result<R, PipeError> + Clone,
     R: Clone,
 {
     type ReturnType = R;

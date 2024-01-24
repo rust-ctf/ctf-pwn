@@ -31,7 +31,7 @@ impl<P, F, R: ReturnsValue> ReturnsValue for DynamicPayload<P, F, R> where
 impl<P, F, R> DynamicPayload<P, F, R>
 where
     P: ReturnsValue,
-    F: Fn(P::ReturnType) -> R + Copy,
+    F: Fn(P::ReturnType) -> R + Clone,
     R: PayloadAction,
 {
     pub fn new(prev_payload: P, action: F) -> DynamicPayload<P, F, R>

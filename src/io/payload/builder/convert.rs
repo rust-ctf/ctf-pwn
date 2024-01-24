@@ -6,7 +6,7 @@ impl<T: ReturnsValue, A> PayloadBuilder<T, A> {
         self,
         action: F,
     ) -> PayloadBuilder<Convert<T, F, E>, A>
-        where F: Fn(T::ReturnType) -> E + Copy, E:Copy
+        where F: Fn(T::ReturnType) -> E + Clone, E:Clone
     {
         PayloadBuilder::from(Convert::<T, F, E>::new(self.payload, action))
     }
@@ -15,7 +15,7 @@ impl<T: ReturnsValue, A> PayloadBuilder<T, A> {
         self,
         action: F,
     ) -> PayloadBuilder<TryConvert<T, F, E>, A>
-        where F: Fn(T::ReturnType) -> Result<E, PipeError> + Copy, E:Copy
+        where F: Fn(T::ReturnType) -> Result<E, PipeError> + Clone, E:Clone
     {
         PayloadBuilder::from(TryConvert::<T, F, E>::new(self.payload, action))
     }
