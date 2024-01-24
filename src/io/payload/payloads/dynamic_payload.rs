@@ -1,50 +1,56 @@
+use std::marker::PhantomData;
 use crate::io::*;
 
 #[derive(Clone)]
-pub struct DynamicPayload<P, E, R> {
+pub struct DynamicPayload<P, F, R> {
     prev_payload: P,
-    action: fn(E) -> R,
+    action: F,
+    _phantom: PhantomData<R>,
 }
 
-impl<P, E, R: Buildable> Buildable for DynamicPayload<P, E, R> where
-    DynamicPayload<P, E, R>: PayloadAction
+impl<P, F, R: Buildable> Buildable for DynamicPayload<P, F, R> where
+    DynamicPayload<P, F, R>: PayloadAction
 {
 }
 
-impl<P, E, R: Sendable> Sendable for DynamicPayload<P, E, R> where
-    DynamicPayload<P, E, R>: PayloadAction
+impl<P, F, R: Sendable> Sendable for DynamicPayload<P, F, R> where
+    DynamicPayload<P, F, R>: PayloadAction
 {
 }
 
-impl<P, E, R: Readable> Readable for DynamicPayload<P, E, R> where
-    DynamicPayload<P, E, R>: PayloadAction
+impl<P, F, R: Readable> Readable for DynamicPayload<P, F, R> where
+    DynamicPayload<P, F, R>: PayloadAction
 {
 }
 
-impl<P, E, R: ReturnsValue> ReturnsValue for DynamicPayload<P, E, R> where
-    DynamicPayload<P, E, R>: PayloadAction
+impl<P, F, R: ReturnsValue> ReturnsValue for DynamicPayload<P, F, R> where
+    DynamicPayload<P, F, R>: PayloadAction
 {
 }
 
-impl<P, E, R> DynamicPayload<P, E, R>
+impl<P, F, R> DynamicPayload<P, F, R>
 where
-    P: PayloadAction<ReturnType = E>,
+    P: ReturnsValue,
+    F: Fn(P::ReturnType) -> R + Copy,
     R: PayloadAction,
 {
-    pub fn new(prev_payload: P, action: fn(E) -> R) -> DynamicPayload<P, E, R> {
+    pub fn new(prev_payload: P, action: F) -> DynamicPayload<P, F, R>
+    {
         DynamicPayload {
             prev_payload,
             action,
+            _phantom: PhantomData::default()
         }
     }
 }
 
-impl<P, E, T> PayloadAction for DynamicPayload<P, E, T>
+impl<P, F, R> PayloadAction for DynamicPayload<P, F, R>
 where
-    P: PayloadAction<ReturnType = E>, E:Clone,
-    T: PayloadAction,
+    P: PayloadAction,
+    F: Fn(P::ReturnType) -> R + Clone,
+    R: PayloadAction,
 {
-    type ReturnType = T::ReturnType;
+    type ReturnType = R::ReturnType;
 
     async fn execute<T1: PipeRead + PipeWrite + Unpin + Send>(
         &self,

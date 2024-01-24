@@ -3,13 +3,14 @@ use crate::io::payload::payloads::DynamicPayload;
 use crate::io::*;
 
 impl<T: ReturnsValue, A> PayloadBuilder<T, A> {
-    pub fn payload<R>(
+    pub fn payload<F, R>(
         self,
-        action: fn(T::ReturnType) -> R,
-    ) -> PayloadBuilder<DynamicPayload<T, T::ReturnType, R>, A>
+        action: F,
+    ) -> PayloadBuilder<DynamicPayload<T, F, R>, A>
     where
+        F: Fn(T::ReturnType) -> R + Copy,
         R: PayloadAction,
     {
-        PayloadBuilder::from(DynamicPayload::new(self.payload, action))
+        PayloadBuilder::from(DynamicPayload::<T,F,R>::new(self.payload, action))
     }
 }

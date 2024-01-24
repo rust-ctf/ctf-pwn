@@ -1,21 +1,23 @@
 use crate::io::*;
 
 #[derive(Clone)]
-pub struct Condition<P, E> {
+pub struct Condition<P, F> {
     prev_payload: P,
-    action: fn(&E) -> bool,
+    action: F,
 }
 
-impl<P, E> Buildable for Condition<P, E> where Self: PayloadAction {}
-impl<P, E> Sendable for Condition<P, E> where Self: PayloadAction {}
-impl<P, E> Readable for Condition<P, E> where Self: PayloadAction {}
-impl<P, E> ReturnsValue for Condition<P, E> where Self: PayloadAction {}
+impl<P, F> Buildable for Condition<P, F> where Self: PayloadAction {}
+impl<P, F> Sendable for Condition<P, F> where Self: PayloadAction {}
+impl<P, F> Readable for Condition<P, F> where Self: PayloadAction {}
+impl<P, F> ReturnsValue for Condition<P, F> where Self: PayloadAction {}
 
-impl<P, E> Condition<P, E>
+impl<P, F> Condition<P, F>
 where
-    P: PayloadAction<ReturnType = E>,
+    P: PayloadAction,
+    F: Fn(&P::ReturnType) -> bool + Clone
 {
-    pub fn new(prev_payload: P, action: fn(&E) -> bool) -> Condition<P, E> {
+    pub fn new(prev_payload: P, action: F) -> Condition<P, F>
+    {
         Condition {
             prev_payload,
             action,
@@ -23,11 +25,12 @@ where
     }
 }
 
-impl<P, E> PayloadAction for Condition<P, E>
+impl<P, F> PayloadAction for Condition<P, F>
 where
-    P: PayloadAction<ReturnType = E>, E: Clone
+    P: PayloadAction,
+    F: Fn(&P::ReturnType) -> bool + Clone
 {
-    type ReturnType = E;
+    type ReturnType = P::ReturnType;
 
     async fn execute<T1: PipeRead + PipeWrite + Unpin + Send>(
         &self,

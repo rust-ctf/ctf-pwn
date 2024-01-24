@@ -1,33 +1,41 @@
+use std::marker::PhantomData;
 use crate::io::*;
 
 #[derive(Clone)]
-pub struct TryConvert<P, E, R> {
+pub struct TryConvert<P, F, R> {
     prev_payload: P,
-    action: fn(E) -> Result<R, PipeError>,
+    action: F,
+    _phantom: PhantomData<R>,
 }
 
-impl<P, E, R> Buildable for TryConvert<P, E, R> where Self: PayloadAction {}
-impl<P, E, R> Sendable for TryConvert<P, E, R> where Self: PayloadAction {}
-impl<P, E, R> Readable for TryConvert<P, E, R> where Self: PayloadAction {}
-impl<P, E, R> ReturnsValue for TryConvert<P, E, R> where Self: PayloadAction {}
+impl<P, F, R> Buildable for TryConvert<P, F, R> where Self: PayloadAction {}
+impl<P, F, R> Sendable for TryConvert<P, F, R> where Self: PayloadAction {}
+impl<P, F, R> Readable for TryConvert<P, F, R> where Self: PayloadAction {}
+impl<P, F, R> ReturnsValue for TryConvert<P, F, R> where Self: PayloadAction {}
 
-impl<P, E, R> TryConvert<P, E, R>
+impl<P, F, R> TryConvert<P, F, R>
 where
-    P: PayloadAction<ReturnType = E>,
+    P: ReturnsValue,
+    F: Fn(P::ReturnType) -> Result<R, PipeError> + Copy,
+    R: Copy
 {
-    pub fn new(prev_payload: P, action: fn(E) -> Result<R, PipeError>) -> TryConvert<P, E, R> {
+    pub fn new(prev_payload: P, action: F) -> TryConvert<P, F, R>
+    {
         TryConvert {
             prev_payload,
             action,
+            _phantom: PhantomData::default()
         }
     }
 }
 
-impl<P, E, T> PayloadAction for TryConvert<P, E, T>
+impl<P, F, R> PayloadAction for TryConvert<P, F, R>
 where
-    P: PayloadAction<ReturnType = E>, E: Clone, T: Clone,
+    P: ReturnsValue,
+    F: Fn(P::ReturnType) -> Result<R, PipeError> + Copy,
+    R: Clone,
 {
-    type ReturnType = T;
+    type ReturnType = R;
 
     async fn execute<T1: PipeRead + PipeWrite + Unpin + Send>(
         &self,

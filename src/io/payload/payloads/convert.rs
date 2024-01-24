@@ -1,33 +1,40 @@
+use std::marker::PhantomData;
 use crate::io::*;
 
 #[derive(Clone)]
-pub struct Convert<P, E, R> {
+pub struct Convert<P, F, E> {
     prev_payload: P,
-    action: fn(E) -> R,
+    action: F,
+    _phantom: PhantomData<E>,
 }
 
-impl<P, E, R> Buildable for Convert<P, E, R> where Self: PayloadAction {}
-impl<P, E, R> Sendable for Convert<P, E, R> where Self: PayloadAction {}
-impl<P, E, R> Readable for Convert<P, E, R> where Self: PayloadAction {}
-impl<P, E, R> ReturnsValue for Convert<P, E, R> where Self: PayloadAction {}
+impl<P,F,E> Buildable for Convert<P, F,E> where Self: PayloadAction {}
+impl<P, F,E> Sendable for Convert<P, F,E> where Self: PayloadAction {}
+impl<P, F,E> Readable for Convert<P, F,E> where Self: PayloadAction {}
+impl<P, F,E> ReturnsValue for Convert<P, F,E> where Self: PayloadAction {}
 
-impl<P, E, R> Convert<P, E, R>
+impl<P, F, E> Convert<P, F, E>
 where
-    P: PayloadAction<ReturnType = E>,
+    P: PayloadAction,
+    F: Fn(P::ReturnType) -> E + Clone
 {
-    pub fn new(prev_payload: P, action: fn(E) -> R) -> Convert<P, E, R> {
+    pub fn new(prev_payload: P, action: F) -> Convert<P, F, E>
+    {
         Convert {
             prev_payload,
             action,
+            _phantom: PhantomData::default(),
         }
     }
 }
 
-impl<P, E, T> PayloadAction for Convert<P, E, T>
-where
-    P: PayloadAction<ReturnType = E>, E: Clone, T:Clone
+impl<P, F, E> PayloadAction for Convert<P, F, E>
+    where
+        P: PayloadAction,
+        E: Clone,
+        F: Fn(P::ReturnType) -> E + Clone
 {
-    type ReturnType = T;
+    type ReturnType = E;
 
     async fn execute<T1: PipeRead + PipeWrite + Unpin + Send>(
         &self,
