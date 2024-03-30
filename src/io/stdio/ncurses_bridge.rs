@@ -3,9 +3,11 @@ use crate::io::{ansi, TerminalError};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use crossterm::*;
 use std::io::ErrorKind::TimedOut;
+use std::io::stdout;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use crossterm::terminal::*;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::join;
 
@@ -56,7 +58,7 @@ where
     W: AsyncWrite + Send + Unpin,
 {
     if is_terminate_process(key_event) {
-        std::process::exit(130); //SIGINT
+        return Err(TerminalError::Exit);
     }
 
     if is_stop_terminal(key_event) {
@@ -149,6 +151,7 @@ impl TerminalBridge for NcursesTerminalBridge {
         let reader_ptr = reader as *mut R as usize;
         let writer_ptr = writer as *mut W as usize;
 
+        execute!(stdout(), EnterAlternateScreen).unwrap();
         terminal::enable_raw_mode().unwrap();
 
         let stop_signal = Arc::new(AtomicBool::new(false));
@@ -171,5 +174,6 @@ impl TerminalBridge for NcursesTerminalBridge {
         let _ = join!(reader_task, writer_task);
 
         terminal::disable_raw_mode().unwrap();
+        execute!(stdout(), LeaveAlternateScreen).unwrap();
     }
 }

@@ -13,11 +13,12 @@ use crossterm::event::{
     DisableBracketedPaste, EnableBracketedPaste, KeyCode, KeyEvent, KeyEventKind,
 };
 use crossterm::style::Print;
-use crossterm::terminal::{Clear, ClearType};
+use crossterm::terminal::{Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen};
 use crossterm::*;
 use tokio::join;
 use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
+use crate::io::TerminalError;
 
 pub struct ShellTerminalBridge {}
 
@@ -47,7 +48,7 @@ impl<'a, W: AsyncWrite + Unpin> StdoutState<'a, W> {
 
     pub async fn insert(&mut self, key_event: KeyEvent) -> TerminalResult<()> {
         if is_terminate_process(key_event) {
-            std::process::exit(130); //SIGINT
+            return Err(TerminalError::Exit);
         }
 
         if is_stop_terminal(key_event) {
@@ -308,6 +309,7 @@ impl TerminalBridge for ShellTerminalBridge {
 
         let (rx, tx) = channel(100);
 
+        execute!(stdout(), EnterAlternateScreen).unwrap();
         terminal::enable_raw_mode().unwrap();
         let _ = execute!(stdout(), EnableBlinking, EnableBracketedPaste);
 
@@ -333,5 +335,6 @@ impl TerminalBridge for ShellTerminalBridge {
         let _ = execute!(stdout(), DisableBlinking, DisableBracketedPaste);
 
         terminal::disable_raw_mode().unwrap();
+        execute!(stdout(), LeaveAlternateScreen).unwrap();
     }
 }

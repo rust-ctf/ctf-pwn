@@ -38,6 +38,9 @@ pub enum TerminalError {
 
     #[error("format error {0}")]
     FmtError(#[from] std::fmt::Error),
+
+    #[error("Force error")]
+    Exit,
 }
 
 type TerminalResult<T> = Result<T, TerminalError>;
