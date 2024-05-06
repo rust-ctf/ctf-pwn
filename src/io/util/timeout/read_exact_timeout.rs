@@ -70,14 +70,15 @@ where
             // if our buffer is empty, then we need to read some data to continue.
             let rem = me.buf.remaining();
             if rem != 0 {
-                match ready!(Pin::new(&mut *me.reader).poll_read(cx, me.buf)) {
-                    Ok(_) => {}
-                    Err(e) if e.kind() == ErrorKind::TimedOut => {
+                match Pin::new(&mut *me.reader).poll_read(cx, me.buf) {
+                    Poll::Ready(Ok(_)) => {}
+                    Poll::Ready(Err(e)) if e.kind() == ErrorKind::TimedOut => {
                         continue;
                     }
-                    Err(e) => {
+                    Poll::Ready(Err(e)) => {
                         return Poll::Ready(Err(e.into()));
                     }
+                    Poll::Pending => continue,
                 };
                 if me.buf.remaining() == rem {
                     return Err(eof()).into();

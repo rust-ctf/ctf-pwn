@@ -62,19 +62,20 @@ where
             }
 
             let old_remaining = me.buf.remaining();
-            match ready!(Pin::new(&mut *me.reader).poll_read(cx, me.buf)) {
-                Ok(_) => {
+            match Pin::new(&mut *me.reader).poll_read(cx, me.buf) {
+                Poll::Ready(Ok(_)) => {
                     if me.buf.remaining() == old_remaining {
                         return Err(eof()).into();
                     }
                     return Poll::Ready(Ok(me.buf.filled().len()));
                 }
-                Err(e) if e.kind() == ErrorKind::TimedOut => {
+                Poll::Ready(Err(e)) if e.kind() == ErrorKind::TimedOut => {
                     continue;
                 }
-                Err(e) => {
+                Poll::Ready(Err(e)) => {
                     return Poll::Ready(Err(e.into()));
                 }
+                Poll::Pending => continue,
             };
         }
     }

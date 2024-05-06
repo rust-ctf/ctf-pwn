@@ -62,14 +62,15 @@ where
                 break;
             }
 
-            match ready!(Pin::new(&mut *me.reader).poll_read(cx, &mut data)) {
-                Ok(_) => {}
-                Err(e) if e.kind() == ErrorKind::TimedOut => {
+            match Pin::new(&mut *me.reader).poll_read(cx, &mut data) {
+                Poll::Ready(Ok(_)) => {}
+                Poll::Ready(Err(e)) if e.kind() == ErrorKind::TimedOut => {
                     continue;
                 }
-                Err(e) => {
+                Poll::Ready(Err(e)) => {
                     return Poll::Ready(Err(e.into()));
                 }
+                Poll::Pending => continue
             };
 
             //eof
