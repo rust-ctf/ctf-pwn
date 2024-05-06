@@ -1,6 +1,6 @@
 [package]
 name = "ctf-pwn"
-version = "0.3.7"
+version = "0.3.8"
 edition = "2021"
 authors = ["Jovan Pavlovic"]
 description = "Pwn utilities for Rust."
