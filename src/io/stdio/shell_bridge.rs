@@ -13,11 +13,12 @@ use crossterm::event::{
     DisableBracketedPaste, EnableBracketedPaste, KeyCode, KeyEvent, KeyEventKind,
 };
 use crossterm::style::Print;
-use crossterm::terminal::{Clear, ClearType};
+use crossterm::terminal::{Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen};
 use crossterm::*;
 use tokio::join;
 use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
+use crate::io::{AsyncReadTimeoutExt, TerminalError};
 
 pub struct ShellTerminalBridge {}
 
@@ -47,7 +48,7 @@ impl<'a, W: AsyncWrite + Unpin> StdoutState<'a, W> {
 
     pub async fn insert(&mut self, key_event: KeyEvent) -> TerminalResult<()> {
         if is_terminate_process(key_event) {
-            std::process::exit(130); //SIGINT
+            return Err(TerminalError::Terminate);
         }
 
         if is_stop_terminal(key_event) {
@@ -246,10 +247,12 @@ where
             break;
         }
 
-        let n = match reader.read(&mut buffer).await {
+        let n = match reader.read_timeout(&mut buffer, Duration::from_secs(1)).await {
             Ok(n) if n == 0 => break, //EOF
             Ok(n) => n,
-            Err(e) if e.kind() == TimedOut => continue,
+            Err(e) if e.kind() == TimedOut =>{
+                continue;
+            }
             Err(e) => return Err(e.into()),
         };
 
@@ -308,6 +311,7 @@ impl TerminalBridge for ShellTerminalBridge {
 
         let (rx, tx) = channel(100);
 
+        let _ = execute!(stdout(), EnterAlternateScreen);
         terminal::enable_raw_mode().unwrap();
         let _ = execute!(stdout(), EnableBlinking, EnableBracketedPaste);
 
@@ -317,21 +321,34 @@ impl TerminalBridge for ShellTerminalBridge {
         let reader_task = tokio::spawn(async move {
             let reader_ptr = reader_ptr as *mut R;
             let reader = unsafe { &mut *reader_ptr };
-            let _ = read_task(reader, read_stop_signal.clone(), rx).await;
+            let res = read_task(reader, read_stop_signal.clone(), rx).await;
             read_stop_signal.store(true, Ordering::SeqCst);
+            res
         });
 
         let writer_task = tokio::spawn(async move {
             let writer_ptr = writer_ptr as *mut W;
             let writer = unsafe { &mut *writer_ptr };
-            let _ = write_task(writer, stop_signal.clone(), tx).await;
+            let res = write_task(writer, stop_signal.clone(), tx).await;
             stop_signal.store(true, Ordering::SeqCst);
+            res
         });
 
-        let _ = join!(reader_task, writer_task);
+        let (read_res, write_res) = join!(reader_task, writer_task);
 
         let _ = execute!(stdout(), DisableBlinking, DisableBracketedPaste);
 
         terminal::disable_raw_mode().unwrap();
+
+        let _ = execute!(stdout(), LeaveAlternateScreen);
+
+        if let Ok(Err(TerminalError::Terminate)) = read_res
+        {
+            std::process::exit(130); //SIGINT
+        }
+        else if  let Ok(Err(TerminalError::Terminate)) = write_res
+        {
+            std::process::exit(130); //SIGINT
+        }
     }
 }

@@ -8,6 +8,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::join;
+use tokio::task::JoinError;
 
 pub struct NcursesTerminalBridge {}
 
@@ -56,7 +57,7 @@ where
     W: AsyncWrite + Send + Unpin,
 {
     if is_terminate_process(key_event) {
-        std::process::exit(130); //SIGINT
+        return Err(TerminalError::Terminate);
     }
 
     if is_stop_terminal(key_event) {
@@ -157,19 +158,30 @@ impl TerminalBridge for NcursesTerminalBridge {
         let reader_task = tokio::spawn(async move {
             let reader_ptr = reader_ptr as *mut R;
             let reader = unsafe { &mut *reader_ptr };
-            let _ = read_task(reader, read_stop_signal.clone()).await;
+            let res = read_task(reader, read_stop_signal.clone()).await;
             read_stop_signal.store(true, Ordering::SeqCst);
+            res
         });
 
         let writer_task = tokio::spawn(async move {
             let writer_ptr = writer_ptr as *mut W;
             let writer = unsafe { &mut *writer_ptr };
-            let _ = write_task(writer, stop_signal.clone()).await;
+            let res = write_task(writer, stop_signal.clone()).await;
             stop_signal.store(true, Ordering::SeqCst);
+            res
         });
 
-        let _ = join!(reader_task, writer_task);
+        let (read_res, write_res) = join!(reader_task, writer_task);
 
         terminal::disable_raw_mode().unwrap();
+
+        if let Ok(Err(TerminalError::Terminate)) = read_res
+        {
+            std::process::exit(130); //SIGINT
+        }
+        else if  let Ok(Err(TerminalError::Terminate)) = write_res
+        {
+            std::process::exit(130); //SIGINT
+        }
     }
 }
