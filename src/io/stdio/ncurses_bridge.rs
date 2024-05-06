@@ -3,9 +3,11 @@ use crate::io::{ansi, TerminalError};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use crossterm::*;
 use std::io::ErrorKind::TimedOut;
+use std::io::stdout;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use crossterm::terminal::*;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::join;
 use tokio::task::JoinError;
@@ -150,6 +152,7 @@ impl TerminalBridge for NcursesTerminalBridge {
         let reader_ptr = reader as *mut R as usize;
         let writer_ptr = writer as *mut W as usize;
 
+        execute!(stdout(), EnterAlternateScreen).unwrap();
         terminal::enable_raw_mode().unwrap();
 
         let stop_signal = Arc::new(AtomicBool::new(false));
