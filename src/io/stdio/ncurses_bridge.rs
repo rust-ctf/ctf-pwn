@@ -178,6 +178,8 @@ impl TerminalBridge for NcursesTerminalBridge {
 
         terminal::disable_raw_mode().unwrap();
 
+        execute!(stdout(), LeaveAlternateScreen).unwrap();
+
         if let Ok(Err(TerminalError::Terminate)) = read_res
         {
             std::process::exit(130); //SIGINT
