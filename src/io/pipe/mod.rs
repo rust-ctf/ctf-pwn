@@ -10,6 +10,7 @@ pub use error::*;
 pub use interactive::*;
 pub use read::*;
 
+use std::fmt::Debug;
 use std::io::Error;
 use std::pin::Pin;
 use std::task::{Context, Poll};
@@ -22,9 +23,28 @@ use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 
 use super::cache::*;
 
+
+pub trait Pipe: PipeRead + PipeWrite + PipeInteractive {
+    
+}
+
+pub trait PipeRead: AsyncRead + AsyncCacheRead + Send + Unpin + Sized {
+    fn get_timeout(&self) -> Duration;
+    fn set_timeout(&mut self, timeout: Duration);
+    fn get_block_size(&self) -> usize;
+    fn set_block_size(&mut self, block_size: usize);
+}
+
+pub trait PipeWrite: AsyncWrite + Send + Unpin + Sized {}
+
+pub trait PipeInteractive: Send + Unpin + Sized {
+    fn split(&mut self) -> (&mut impl PipeRead, &mut impl PipeWrite);
+}
+
+
 pin_project! {
     #[derive(Debug)]
-    pub struct Pipe<R,W> {
+    pub struct OwnedPipe<R,W> {
         #[pin]
         reader: CacheReader<R>,
         #[pin]
@@ -34,107 +54,107 @@ pin_project! {
     }
 }
 
-impl<R: AsyncRead, W> PipeRead for Pipe<R, W> {
-    fn get_timeout(&self) -> Duration {
-        self.timeout
-    }
+// impl<R: AsyncRead, W> PipeRead for OwnedPipe<R, W> {
+//     fn get_timeout(&self) -> Duration {
+//         self.timeout
+//     }
 
-    fn set_timeout(&mut self, timeout: Duration) {
-        self.timeout = timeout;
-    }
+//     fn set_timeout(&mut self, timeout: Duration) {
+//         self.timeout = timeout;
+//     }
 
-    fn get_block_size(&self) -> usize {
-        self.block_size
-    }
+//     fn get_block_size(&self) -> usize {
+//         self.block_size
+//     }
 
-    fn set_block_size(&mut self, block_size: usize) {
-        self.block_size = block_size;
-    }
-}
+//     fn set_block_size(&mut self, block_size: usize) {
+//         self.block_size = block_size;
+//     }
+// }
 
-impl<R, W: AsyncWrite> PipeWrite for Pipe<R, W> {}
+// impl<R:, W: AsyncWrite> PipeWrite for OwnedPipe<R, W> {}
 
-impl<R, W> Pipe<R, W>
-where
-    Self: PipeRead + PipeWrite + Send,
-{
-    pub async fn payload<T: PayloadAction>(
-        &mut self,
-        payload: T,
-    ) -> Result<T::ReturnType, PipeError>
-    where
-        Self: Unpin,
-    {
-        payload.execute(self).await
-    }
-}
+// impl<R, W> OwnedPipe<R, W>
+// where
+//     Self: PipeRead + PipeWrite + Send,
+// {
+//     pub async fn payload<T: PayloadAction>(
+//         &mut self,
+//         payload: T,
+//     ) -> Result<T::ReturnType, PipeError>
+//     where
+//         Self: Unpin,
+//     {
+//         payload.execute(self).await
+//     }
+// }
 
-impl<R: AsyncRead, W> AsyncCacheRead for Pipe<R, W> {
-    fn poll_reader(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
-    ) -> Poll<std::io::Result<()>> {
-        self.project().reader.poll_reader(cx, buf)
-    }
+// impl<R: AsyncRead, W> AsyncCacheRead for OwnedPipe<R, W> {
+//     fn poll_reader(
+//         self: Pin<&mut Self>,
+//         cx: &mut Context<'_>,
+//         buf: &mut ReadBuf<'_>,
+//     ) -> Poll<std::io::Result<()>> {
+//         self.project().reader.poll_reader(cx, buf)
+//     }
 
-    fn consume(self: Pin<&mut Self>, amt: usize) {
-        self.project().reader.consume(amt)
-    }
+//     fn consume(self: Pin<&mut Self>, amt: usize) {
+//         self.project().reader.consume(amt)
+//     }
 
-    fn restore(self: Pin<&mut Self>, data: &[u8]) {
-        self.project().reader.restore(data)
-    }
-}
+//     fn restore(self: Pin<&mut Self>, data: &[u8]) {
+//         self.project().reader.restore(data)
+//     }
+// }
 
-impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> Pipe<R, W> {
-    const DEFAULT_TIMEOUT: Duration = Duration::from_secs(1);
-    const DEFAULT_BLOCK_SIZE: usize = 4096;
+// impl<R: AsyncRead + Unpin, W: AsyncWrite + Unpin> OwnedPipe<R, W> {
+//     const DEFAULT_TIMEOUT: Duration = Duration::from_secs(1);
+//     const DEFAULT_BLOCK_SIZE: usize = 4096;
 
-    pub fn new(reader: R, writer: W) -> Pipe<R, W> {
-        Pipe {
-            reader: CacheReader::new(reader), //CacheReader::new(timeout_reader),
-            writer: writer,
-            block_size: Self::DEFAULT_BLOCK_SIZE,
-            timeout: Self::DEFAULT_TIMEOUT,
-        }
-    }
-}
+//     pub fn new(reader: R, writer: W) -> OwnedPipe<R, W> {
+//         OwnedPipe {
+//             reader: CacheReader::new(reader), //CacheReader::new(timeout_reader),
+//             writer: writer,
+//             block_size: Self::DEFAULT_BLOCK_SIZE,
+//             timeout: Self::DEFAULT_TIMEOUT,
+//         }
+//     }
+// }
 
-impl<R: AsyncRead, W> AsyncRead for Pipe<R, W> {
-    fn poll_read(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
-    ) -> Poll<std::io::Result<()>> {
-        let this = self.project();
-        this.reader.poll_read(cx, buf)
-    }
-}
+// impl<R: AsyncRead, W> AsyncRead for OwnedPipe<R, W> {
+//     fn poll_read(
+//         self: Pin<&mut Self>,
+//         cx: &mut Context<'_>,
+//         buf: &mut ReadBuf<'_>,
+//     ) -> Poll<std::io::Result<()>> {
+//         let this = self.project();
+//         this.reader.poll_read(cx, buf)
+//     }
+// }
 
-impl<R, W: AsyncWrite> AsyncWrite for Pipe<R, W> {
-    fn poll_write(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &[u8],
-    ) -> Poll<std::result::Result<usize, Error>> {
-        let this = self.project();
-        this.writer.poll_write(cx, buf)
-    }
+// impl<R, W: AsyncWrite> AsyncWrite for OwnedPipe<R, W> {
+//     fn poll_write(
+//         self: Pin<&mut Self>,
+//         cx: &mut Context<'_>,
+//         buf: &[u8],
+//     ) -> Poll<std::result::Result<usize, Error>> {
+//         let this = self.project();
+//         this.writer.poll_write(cx, buf)
+//     }
 
-    fn poll_flush(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<std::result::Result<(), Error>> {
-        let this = self.project();
-        this.writer.poll_flush(cx)
-    }
+//     fn poll_flush(
+//         self: Pin<&mut Self>,
+//         cx: &mut Context<'_>,
+//     ) -> Poll<std::result::Result<(), Error>> {
+//         let this = self.project();
+//         this.writer.poll_flush(cx)
+//     }
 
-    fn poll_shutdown(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<std::result::Result<(), Error>> {
-        let this = self.project();
-        this.writer.poll_shutdown(cx)
-    }
-}
+//     fn poll_shutdown(
+//         self: Pin<&mut Self>,
+//         cx: &mut Context<'_>,
+//     ) -> Poll<std::result::Result<(), Error>> {
+//         let this = self.project();
+//         this.writer.poll_shutdown(cx)
+//     }
+// }

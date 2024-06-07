@@ -3,7 +3,9 @@ use crossterm::Command;
 use std::time::Duration;
 use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
 
-pub trait PipeWrite: AsyncWrite {}
+use super::PipeWrite;
+
+
 
 impl<W: PipeWrite> PipeWriteExt for W {}
 
