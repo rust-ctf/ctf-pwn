@@ -1,6 +1,6 @@
 use super::RecvResult;
 use crate::io::pipe::PipeRead;
-use crate::{io::timeout::*, timeout_ready};
+use crate::io::timeout::*;
 use pin_project_lite::pin_project;
 use std::marker::Unpin;
 use std::pin::Pin;
@@ -16,11 +16,12 @@ pub(crate) fn recv<'a, R>(
 where
     R: PipeRead + Unpin + ?Sized,
 {
+    let buf: Vec<u8> = vec![0u8; size];
     Recv {
         delay: None,
         callback: timeout.into(),
         reader,
-        size,
+        buf,
         _pin: PhantomPinned,
     }
 }
@@ -28,7 +29,7 @@ where
 pin_project! {
     pub struct Recv<'a, R: ?Sized> {
         reader: &'a mut R,
-        size: usize,
+        buf: Vec<u8>,
         #[pin]
         delay: Option<BoxSleep>,
         callback: PwnTimeout, // callback to create the timer
@@ -49,8 +50,7 @@ where
     ) -> std::task::Poll<Self::Output> {
         let mut me = self.project();
 
-        let mut result: Vec<u8> = vec![0u8; *me.size];
-        let mut buf = ReadBuf::new(&mut result);
+        let mut buf = ReadBuf::new(&mut me.buf);
 
         //Fill data we have on start
         loop {
@@ -69,13 +69,13 @@ where
             return Poll::Ready(Ok(buf.filled().into()));
         }
 
-        timeout_ready!(
-            Pin::new(&mut *me.reader).poll_read(cx, &mut buf),
-            me.delay,
-            me.callback,
-            cx
-        )?;
+        let delay = me
+            .delay
+            .get_or_insert_with(|| Box::pin(me.callback.timeout()));
 
-        Poll::Ready(Ok(buf.filled().into()))
+        return match delay.as_mut().poll(cx) {
+            Poll::Pending => std::task::Poll::Pending,
+            Poll::Ready(()) => std::task::Poll::Ready(Err(IOTimeoutError::Timeout)),
+        };
     }
 }

@@ -9,7 +9,6 @@ use tokio::io::{AsyncRead, ReadBuf};
 use super::CacheRead;
 
 pin_project! {
-    /// An `AsyncRead`er which applies a timeout to read operations.
     #[derive(Debug)]
     pub struct CacheReader<R> {
         #[pin]
