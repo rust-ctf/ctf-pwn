@@ -1,6 +1,8 @@
 mod recv;
+mod recv_all;
 mod result;
 pub use recv::*;
+pub use recv_all::*;
 pub use result::*;
 
 use std::time::Duration;
@@ -33,5 +35,13 @@ pub trait PipeReadExt: PipeRead {
     {
         let delay = timeout_delay(self.read_timeout());
         recv::recv(self, size, delay)
+    }
+
+    fn recvall<'a>(&'a mut self) -> RecvAll<'a, Self>
+    where
+        Self: Unpin,
+    {
+        let delay = timeout_delay(self.read_timeout());
+        recv_all::recv_all(self, delay)
     }
 }
