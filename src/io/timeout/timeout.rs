@@ -28,9 +28,12 @@ impl PwnTimeout {
     pub fn calculate_deadline(delay: Duration) -> Instant {
         match Instant::now().checked_add(delay) {
             Some(deadline) => deadline,
-            //Instant::far_future()
-            None => Instant::now() + Duration::from_secs(86400 * 365 * 30),
+            None => Instant::now() + Self::far_away(),
         }
+    }
+
+    pub fn far_away() -> Duration {
+        Duration::from_secs(86400 * 365 * 30)
     }
 }
 
