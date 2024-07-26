@@ -64,6 +64,8 @@ where
                 let res: &[u8] = me.buf.as_ref();
                 return Poll::Ready(Ok(res.into()));
             }
+
+            me.buf.append(&mut buf.filled().to_vec())
         }
 
         let delay = me
