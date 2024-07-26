@@ -1,4 +1,4 @@
-use std::{marker::PhantomPinned, time::Duration};
+use std::time::Duration;
 
 use pin_project_lite::pin_project;
 use tokio::io::AsyncRead;
@@ -15,8 +15,6 @@ pin_project! {
         #[pin]
         reader: Reader<R>,
         timeout: Option<Duration>,
-        #[pin]
-        _pin: PhantomPinned,
     }
 }
 
@@ -28,7 +26,6 @@ where
         Self {
             reader: Reader::new(reader),
             timeout: Some(Self::DEFAULT_READ_TIMEOUT),
-            _pin: PhantomPinned,
         }
     }
 }

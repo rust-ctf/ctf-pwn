@@ -1,4 +1,4 @@
-use std::{marker::PhantomPinned, time::Duration};
+use std::time::Duration;
 
 use pin_project_lite::pin_project;
 use tokio::io::{AsyncRead, AsyncWrite};
@@ -16,8 +16,6 @@ pin_project! {
         reader: PipeReader<R>,
         #[pin]
         writer: PipeWriter<W>,
-        #[pin]
-        _pin: PhantomPinned,
     }
 }
 
@@ -30,7 +28,6 @@ where
         OwnedPipe {
             reader: PipeReader::new(reader),
             writer: PipeWriter::new(writer),
-            _pin: PhantomPinned,
         }
     }
 }

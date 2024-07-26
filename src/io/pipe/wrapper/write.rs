@@ -1,4 +1,4 @@
-use std::{marker::PhantomPinned, time::Duration};
+use std::time::Duration;
 
 use pin_project_lite::pin_project;
 use tokio::io::AsyncWrite;
@@ -12,8 +12,6 @@ pin_project! {
         #[pin]
         writer: Writer<W>,
         timeout: Option<Duration>,
-        #[pin]
-        _pin: PhantomPinned,
     }
 }
 
@@ -25,7 +23,6 @@ where
         Self {
             writer,
             timeout: Some(Self::DEFAULT_WRITE_TIMEOUT),
-            _pin: PhantomPinned,
         }
     }
 }

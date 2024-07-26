@@ -1,5 +1,4 @@
 use std::{
-    marker::PhantomPinned,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -17,8 +16,6 @@ pin_project! {
         pub(crate) reader: R,
         #[pin]
         pub(crate) cache: Vec<u8>,
-        #[pin]
-        _pin: PhantomPinned,
     }
 }
 
@@ -27,7 +24,6 @@ impl<R> CacheReader<R> {
         CacheReader {
             reader,
             cache: Vec::new(),
-            _pin: PhantomPinned,
         }
     }
 }
