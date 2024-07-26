@@ -9,14 +9,20 @@ use tokio::io::{AsyncRead, ReadBuf};
 
 use super::RecvResult;
 
-pub(crate) fn recv_all<'a, R>(reader: &'a mut R, timeout: impl Into<PwnTimeout>) -> RecvAll<'a, R>
+pub(crate) fn recv_until<'a, R, D>(
+    reader: &'a mut R,
+    delimiter: D,
+    timeout: impl Into<PwnTimeout>,
+) -> RecvUntil<'a, R, D>
 where
     R: PipeRead + Unpin + ?Sized,
+    D: AsRef<[u8]>,
 {
     let buf = Vec::new();
-    RecvAll {
+    RecvUntil {
         delay: None,
         callback: timeout.into(),
+        delimiter,
         reader,
         buf,
         _pin: PhantomPinned,
@@ -24,9 +30,10 @@ where
 }
 
 pin_project! {
-    pub struct RecvAll<'a, R: ?Sized> {
+    pub struct RecvUntil<'a, R: ?Sized, D: AsRef<[u8]>> {
         reader: &'a mut R,
         buf: Vec<u8>,
+        delimiter: D,
         #[pin]
         delay: Option<BoxSleep>,
         callback: PwnTimeout, // callback to create the timer
@@ -35,9 +42,10 @@ pin_project! {
     }
 }
 
-impl<R> Future for RecvAll<'_, R>
+impl<R, D> Future for RecvUntil<'_, R, D>
 where
     R: PipeRead + Unpin + ?Sized,
+    D: AsRef<[u8]>,
 {
     type Output = Result<RecvResult, PipeError>;
 
@@ -46,6 +54,7 @@ where
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
         let mut me = self.project();
+        let delim_len = me.delimiter.as_ref().len();
 
         let mut buf = [0u8; 1024];
 
@@ -63,7 +72,20 @@ where
                 return Poll::Ready(Ok(res.into()));
             }
 
-            me.buf.append(&mut buf.filled().to_vec())
+            me.buf.append(&mut buf.filled().to_vec());
+
+            //TODO: Optimize to only use last part of buff (of pattern len) when pattern matching
+
+            match kmp::kmp_find(me.delimiter.as_ref(), &me.buf) {
+                Some(offset) => {
+                    let drain_index = offset + delim_len;
+                    let restore_data = &me.buf[drain_index..];
+                    me.reader.restore(restore_data);
+                    let res: &[u8] = &me.buf[..drain_index];
+                    return Poll::Ready(Ok(res.into()));
+                }
+                None => {}
+            }
         }
 
         let delay = me
@@ -73,8 +95,8 @@ where
         return match delay.as_mut().poll(cx) {
             Poll::Pending => std::task::Poll::Pending,
             Poll::Ready(()) => {
-                let res: &[u8] = me.buf.as_ref();
-                return Poll::Ready(Ok(res.into()));
+                me.reader.restore(&me.buf);
+                return Poll::Ready(Err(PipeError::Timeout));
             }
         };
     }

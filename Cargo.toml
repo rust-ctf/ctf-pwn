@@ -13,6 +13,7 @@ ascii = "1.1.0"
 bytes = "1.6.1"
 futures = "0.3.30"
 hex = "0.4.3"
+kmp = "0.1.1"
 pin-project-lite = "0.2.14"
 thiserror = "1.0.63"
 tokio = { version = "1.39.1", features = ["bytes", "fs", "io-util", "net", "parking_lot", "process", "time"] }

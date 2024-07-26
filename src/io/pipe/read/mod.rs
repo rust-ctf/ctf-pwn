@@ -1,8 +1,10 @@
 mod recv;
 mod recv_all;
+mod recv_until;
 mod result;
 pub use recv::*;
 pub use recv_all::*;
+pub use recv_until::*;
 pub use result::*;
 
 use std::time::Duration;

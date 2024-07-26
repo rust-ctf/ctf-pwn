@@ -1,5 +1,5 @@
 use super::RecvResult;
-use crate::io::pipe::PipeRead;
+use crate::io::pipe::{PipeError, PipeRead};
 use crate::io::timeout::*;
 use pin_project_lite::pin_project;
 use std::marker::Unpin;
@@ -42,7 +42,7 @@ impl<R> Future for Recv<'_, R>
 where
     R: AsyncRead + Unpin + ?Sized,
 {
-    type Output = Result<RecvResult, IOTimeoutError>;
+    type Output = Result<RecvResult, PipeError>;
 
     fn poll(
         self: Pin<&mut Self>,
@@ -75,7 +75,7 @@ where
 
         return match delay.as_mut().poll(cx) {
             Poll::Pending => std::task::Poll::Pending,
-            Poll::Ready(()) => std::task::Poll::Ready(Err(IOTimeoutError::Timeout)),
+            Poll::Ready(()) => std::task::Poll::Ready(Err(PipeError::Timeout)),
         };
     }
 }
