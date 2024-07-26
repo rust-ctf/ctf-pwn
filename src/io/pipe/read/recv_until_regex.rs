@@ -1,39 +1,41 @@
 use crate::io::pipe::{PipeError, PipeRead};
 use crate::io::timeout::*;
 use pin_project_lite::pin_project;
+use regex::bytes::*;
 use std::marker::Unpin;
 use std::pin::Pin;
+use std::str::FromStr;
 use std::task::Poll;
 use std::{future::Future, marker::PhantomPinned};
 use tokio::io::{AsyncRead, ReadBuf};
 
 use super::RecvResult;
 
-pub(crate) fn recv_until<'a, R, D>(
+pub(crate) fn recv_until_regex<'a, R>(
     reader: &'a mut R,
-    delimiter: D,
+    pattern: &str,
     timeout: impl Into<PwnTimeout>,
-) -> RecvUntil<'a, R, D>
+) -> Result<RecvUntilRegex<'a, R>, regex::Error>
 where
     R: PipeRead + Unpin + ?Sized,
-    D: AsRef<[u8]>,
 {
+    let rx = Regex::from_str(pattern)?;
     let buf = Vec::new();
-    RecvUntil {
+    Ok(RecvUntilRegex {
         delay: None,
         callback: timeout.into(),
-        delimiter,
+        rx,
         reader,
         buf,
         _pin: PhantomPinned,
-    }
+    })
 }
 
 pin_project! {
-    pub struct RecvUntil<'a, R: ?Sized, D: AsRef<[u8]>> {
+    pub struct RecvUntilRegex<'a, R: ?Sized> {
         reader: &'a mut R,
         buf: Vec<u8>,
-        delimiter: D,
+        rx: Regex,
         #[pin]
         delay: Option<BoxSleep>,
         callback: PwnTimeout, // callback to create the timer
@@ -42,10 +44,9 @@ pin_project! {
     }
 }
 
-impl<R, D> Future for RecvUntil<'_, R, D>
+impl<R> Future for RecvUntilRegex<'_, R>
 where
     R: PipeRead + Unpin + ?Sized,
-    D: AsRef<[u8]>,
 {
     type Output = Result<RecvResult, PipeError>;
 
@@ -54,8 +55,6 @@ where
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
         let mut me = self.project();
-        let delim_len = me.delimiter.as_ref().len();
-
         let mut buf = [0u8; 1024];
 
         loop {
@@ -75,8 +74,16 @@ where
             me.buf.append(&mut buf.filled().to_vec());
 
             //TODO: Optimize to only use last part of buff (of pattern len) when pattern matching
-            match kmp::kmp_find(me.delimiter.as_ref(), &me.buf) {
-                Some(offset) => {
+            match me.rx.captures(&me.buf) {
+                Some(capture) => {
+                    let full_match = capture
+                        .get(0)
+                        .expect("Failed to get regex match value")
+                        .as_bytes();
+                    let delim_len = full_match.len();
+                    let offset = kmp::kmp_find(full_match, &me.buf)
+                        .expect("Failed to get regex match offset");
+
                     let drain_index = offset + delim_len;
                     let restore_data = &me.buf[drain_index..];
                     me.reader.restore(restore_data);

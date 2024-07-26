@@ -1,11 +1,15 @@
 mod recv;
 mod recv_all;
+mod recv_regex;
 mod recv_until;
+mod recv_until_regex;
 mod result;
-pub use recv::*;
-pub use recv_all::*;
-pub use recv_until::*;
-pub use result::*;
+pub(crate) use recv::*;
+pub(crate) use recv_all::*;
+pub(crate) use recv_regex::*;
+pub(crate) use recv_until::*;
+pub(crate) use recv_until_regex::*;
+pub(crate) use result::*;
 
 use std::time::Duration;
 
@@ -53,5 +57,24 @@ pub trait PipeReadExt: PipeRead {
     {
         let delay = timeout_delay(self.read_timeout());
         recv_until::recv_until(self, delimiter, delay)
+    }
+
+    fn recvregex<'a>(&'a mut self, pattern: &str) -> Result<RecvRegex<'a, Self>, regex::Error>
+    where
+        Self: Unpin,
+    {
+        let delay = timeout_delay(self.read_timeout());
+        recv_regex::recv_regex(self, pattern, delay)
+    }
+
+    fn recvuntilregex<'a>(
+        &'a mut self,
+        pattern: &str,
+    ) -> Result<RecvUntilRegex<'a, Self>, regex::Error>
+    where
+        Self: Unpin,
+    {
+        let delay = timeout_delay(self.read_timeout());
+        recv_until_regex::recv_until_regex(self, pattern, delay)
     }
 }
