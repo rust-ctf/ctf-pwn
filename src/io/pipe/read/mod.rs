@@ -46,4 +46,12 @@ pub trait PipeReadExt: PipeRead {
         let delay = timeout_delay(self.read_timeout());
         recv_all::recv_all(self, delay)
     }
+
+    fn recvuntil<'a, D: AsRef<[u8]>>(&'a mut self, delimiter: D) -> RecvUntil<'a, Self, D>
+    where
+        Self: Unpin,
+    {
+        let delay = timeout_delay(self.read_timeout());
+        recv_until::recv_until(self, delimiter, delay)
+    }
 }

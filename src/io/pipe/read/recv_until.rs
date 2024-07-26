@@ -75,7 +75,6 @@ where
             me.buf.append(&mut buf.filled().to_vec());
 
             //TODO: Optimize to only use last part of buff (of pattern len) when pattern matching
-
             match kmp::kmp_find(me.delimiter.as_ref(), &me.buf) {
                 Some(offset) => {
                     let drain_index = offset + delim_len;
