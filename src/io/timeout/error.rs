@@ -7,4 +7,6 @@ pub enum IOTimeoutError {
     IOError(#[from] io::Error),
     #[error("Timeout")]
     Timeout,
+    #[error("Early eof")]
+    UnexpectedEof,
 }

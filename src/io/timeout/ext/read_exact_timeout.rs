@@ -6,27 +6,27 @@ use std::task::Poll;
 use std::{future::Future, marker::PhantomPinned};
 use tokio::io::{AsyncRead, ReadBuf};
 
-pub(crate) fn read_timeout<'a, R>(
+pub(crate) fn read_exact_timeout<'a, R>(
     reader: &'a mut R,
     buf: &'a mut [u8],
     timeout: impl Into<PwnTimeout>,
-) -> ReadTimeout<'a, R>
+) -> ReadExactTimeout<'a, R>
 where
     R: AsyncRead + Unpin + ?Sized,
 {
-    ReadTimeout {
+    ReadExactTimeout {
         delay: None,
         callback: timeout.into(),
         reader,
-        buf,
+        buf: ReadBuf::new(buf),
         _pin: PhantomPinned,
     }
 }
 
 pin_project! {
-    pub struct ReadTimeout<'a, R: ?Sized> {
+    pub struct ReadExactTimeout<'a, R: ?Sized> {
         reader: &'a mut R,
-        buf: &'a mut [u8],
+        buf: ReadBuf<'a>,
         #[pin]
         delay: Option<BoxSleep>,
         callback: PwnTimeout, // callback to create the timer
@@ -35,7 +35,7 @@ pin_project! {
     }
 }
 
-impl<R> Future for ReadTimeout<'_, R>
+impl<R> Future for ReadExactTimeout<'_, R>
 where
     R: AsyncRead + Unpin + ?Sized,
 {
@@ -47,15 +47,22 @@ where
     ) -> std::task::Poll<Self::Output> {
         let mut me = self.project();
 
-        let mut buf = ReadBuf::new(me.buf);
-
-        timeout_ready!(
-            Pin::new(&mut *me.reader).poll_read(cx, &mut buf),
-            me.delay,
-            me.callback,
-            cx
-        )?;
-
-        Poll::Ready(Ok(buf.filled().len()))
+        loop {
+            // if our buffer is empty, then we need to read some data to continue.
+            let rem = me.buf.remaining();
+            if rem != 0 {
+                timeout_ready!(
+                    Pin::new(&mut *me.reader).poll_read(cx, me.buf),
+                    me.delay,
+                    me.callback,
+                    cx
+                )?;
+                if me.buf.remaining() == rem {
+                    return Err(IOTimeoutError::UnexpectedEof).into();
+                }
+            } else {
+                return Poll::Ready(Ok(me.buf.capacity()));
+            }
+        }
     }
 }
