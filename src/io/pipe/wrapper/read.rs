@@ -20,6 +20,19 @@ pin_project! {
     }
 }
 
+impl<R> PipeReader<R>
+where
+    Self: PipeRead,
+{
+    pub fn new(reader: R) -> Self {
+        Self {
+            reader: Reader::new(reader),
+            timeout: Some(Self::DEFAULT_READ_TIMEOUT),
+            _pin: PhantomPinned,
+        }
+    }
+}
+
 impl<R> AsyncRead for PipeReader<R>
 where
     Reader<R>: AsyncRead,

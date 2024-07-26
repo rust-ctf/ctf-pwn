@@ -1,7 +1,9 @@
 mod error;
+mod protocol;
 mod read;
 mod wrapper;
 pub use error::*;
+pub use protocol::*;
 pub use read::*;
 pub use wrapper::*;
 

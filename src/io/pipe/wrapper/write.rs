@@ -17,6 +17,19 @@ pin_project! {
     }
 }
 
+impl<W> PipeWriter<W>
+where
+    Self: PipeWrite,
+{
+    pub fn new(writer: W) -> Self {
+        Self {
+            writer,
+            timeout: Some(Self::DEFAULT_WRITE_TIMEOUT),
+            _pin: PhantomPinned,
+        }
+    }
+}
+
 impl<W> AsyncWrite for PipeWriter<W>
 where
     Writer<W>: AsyncWrite,

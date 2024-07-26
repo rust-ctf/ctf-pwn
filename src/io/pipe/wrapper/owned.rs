@@ -16,9 +16,22 @@ pin_project! {
         reader: PipeReader<R>,
         #[pin]
         writer: PipeWriter<W>,
-        timeout: Option<Duration>,
         #[pin]
         _pin: PhantomPinned,
+    }
+}
+
+impl<R, W> OwnedPipe<R, W>
+where
+    PipeReader<R>: PipeRead,
+    PipeWriter<W>: PipeWrite,
+{
+    pub fn new(reader: R, writer: W) -> OwnedPipe<R, W> {
+        OwnedPipe {
+            reader: PipeReader::new(reader),
+            writer: PipeWriter::new(writer),
+            _pin: PhantomPinned,
+        }
     }
 }
 
