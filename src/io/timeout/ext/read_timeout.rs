@@ -6,7 +6,6 @@ use std::pin::Pin;
 use std::task::Poll;
 use tokio::io::{AsyncRead, ReadBuf};
 
-/// A future which can be used to easily read bytes until timeout or buf is fully filled
 pub(crate) fn read_timeout<'a, A: AsyncRead>(
     reader: &'a mut A,
     buf: &'a mut [u8],
