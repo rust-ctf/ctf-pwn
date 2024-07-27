@@ -11,6 +11,8 @@ pub enum PipeError {
     Timeout,
     #[error("Early eof")]
     UnexpectedEof,
+    #[error("Early eof")]
+    Unknown,
 }
 
 impl From<io::Error> for PipeError {
