@@ -3,7 +3,6 @@ use bytes::Buf;
 use pin_project_lite::pin_project;
 use std::future::Future;
 use std::marker::PhantomPinned;
-use std::mem::size_of;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, ReadBuf};
@@ -18,7 +17,7 @@ macro_rules! reader {
                 #[pin]
                 src: R,
                 buf: [u8; $bytes],
-                read: u8,
+                read: usize,
                 #[pin]
                 delay: Option<BoxSleep>,
                 callback: PwnTimeout,
@@ -49,12 +48,12 @@ macro_rules! reader {
             fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
                 let mut me = self.project();
 
-                if *me.read == $bytes as u8 {
+                if *me.read == $bytes {
                     return Poll::Ready(Ok(Buf::$reader(&mut &me.buf[..])));
                 }
 
-                while *me.read < $bytes as u8 {
-                    let mut buf = ReadBuf::new(&mut me.buf[*me.read as usize..]);
+                while *me.read < $bytes {
+                    let mut buf = ReadBuf::new(&mut me.buf[*me.read..]);
 
                     timeout_ready!(
                         me.src.as_mut().poll_read(cx, &mut buf),
@@ -67,7 +66,7 @@ macro_rules! reader {
                     if n == 0 {
                         return Poll::Ready(Err(IOTimeoutError::UnexpectedEof));
                     }
-                    *me.read += n as u8
+                    *me.read += n;
                 }
 
                 let num = Buf::$reader(&mut &me.buf[..]);
@@ -109,6 +108,12 @@ macro_rules! reader8 {
         {
             type Output = Result<$ty, IOTimeoutError>;
 
+            #[expect(clippy::allow_attributes, reason = "expect cannot be used here as not all lints fire in each macro expansion")]
+            #[allow(
+                trivial_numeric_casts,
+                clippy::cast_possible_wrap,
+                reason = "macro is used for both u8 and i8"
+            )]
             fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
                 let mut me = self.project();
 
@@ -122,7 +127,7 @@ macro_rules! reader8 {
                     cx
                 )?;
 
-                if buf.filled().len() == 0 {
+                if buf.filled().is_empty() {
                     return Poll::Ready(Err(IOTimeoutError::UnexpectedEof));
                 }
 

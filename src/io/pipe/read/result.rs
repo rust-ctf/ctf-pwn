@@ -2,11 +2,13 @@ use std::string::FromUtf8Error;
 
 use ascii::{AsciiString, FromAsciiError};
 
+/// Result of a receive operation containing raw bytes.
 #[derive(Debug, Clone)]
 pub struct RecvResult {
     data: Vec<u8>,
 }
 
+/// Result of a regex receive operation with full match and capture groups.
 #[derive(Debug, Clone)]
 pub struct RecvRegexResult {
     full_match: RecvResult,
@@ -15,27 +17,42 @@ pub struct RecvRegexResult {
 
 impl From<&[u8]> for RecvResult {
     fn from(value: &[u8]) -> Self {
-        RecvResult::new(value.to_vec())
+        Self::new(value.to_vec())
     }
 }
 
 impl RecvResult {
-    pub fn new(data: Vec<u8>) -> RecvResult {
-        RecvResult { data }
+    /// Create a new `RecvResult` from raw bytes.
+    pub fn new(data: Vec<u8>) -> Self {
+        Self { data }
     }
 
+    /// Returns the data as a hex-encoded string.
+    #[must_use]
     pub fn as_hex(&self) -> String {
         hex::encode(&self.data)
     }
 
+    /// Returns the data as an ASCII string.
+    ///
+    /// # Errors
+    ///
+    /// Returns `FromAsciiError` if the data contains non-ASCII bytes.
     pub fn as_ascii(&self) -> Result<AsciiString, FromAsciiError<Vec<u8>>> {
         AsciiString::from_ascii(self.data.clone())
     }
 
+    /// Returns the data as a UTF-8 string.
+    ///
+    /// # Errors
+    ///
+    /// Returns `FromUtf8Error` if the data is not valid UTF-8.
     pub fn as_utf8(&self) -> Result<String, FromUtf8Error> {
         String::from_utf8(self.data.clone())
     }
 
+    /// Returns a reference to the raw bytes.
+    #[must_use]
     pub fn as_bytes(&self) -> &[u8] {
         &self.data
     }
@@ -48,10 +65,12 @@ impl AsRef<[u8]> for RecvResult {
 }
 
 impl RecvRegexResult {
+    /// Returns the full regex match.
     pub fn full_match(&self) -> &RecvResult {
         &self.full_match
     }
 
+    /// Returns the capture groups.
     pub fn groups(&self) -> &[RecvResult] {
         &self.groups
     }
@@ -62,12 +81,11 @@ impl<'a> From<regex::bytes::Captures<'a>> for RecvRegexResult {
         let groups = value
             .iter()
             .map(|m| {
-                m.map(|m| m.as_bytes().into())
-                    .unwrap_or(RecvResult::new(Vec::new()))
+                m.map_or_else(|| RecvResult::new(Vec::new()), |m| m.as_bytes().into())
             })
             .collect::<Vec<RecvResult>>();
 
-        RecvRegexResult {
+        Self {
             full_match: groups[0].clone(),
             groups,
         }

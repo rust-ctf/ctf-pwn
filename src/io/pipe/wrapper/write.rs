@@ -5,9 +5,11 @@ use tokio::io::AsyncWrite;
 
 use crate::io::pipe::PipeWrite;
 
+/// Type alias for the inner writer.
 type Writer<W> = W;
 
 pin_project! {
+    /// Pipe writer wrapper with timeout support.
     pub struct PipeWriter<W> {
         #[pin]
         writer: Writer<W>,
@@ -19,6 +21,7 @@ impl<W> PipeWriter<W>
 where
     Self: PipeWrite,
 {
+    /// Create a new `PipeWriter` wrapping the given writer.
     pub fn new(writer: W) -> Self {
         Self {
             writer,

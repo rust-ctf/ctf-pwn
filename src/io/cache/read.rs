@@ -9,6 +9,7 @@ use tokio::io::{AsyncRead, ReadBuf};
 use super::CacheRead;
 
 pin_project! {
+    /// Async reader that buffers data and supports cache operations.
     #[derive(Debug)]
     pub struct CacheReader<R> {
         #[pin]
@@ -19,8 +20,9 @@ pin_project! {
 }
 
 impl<R> CacheReader<R> {
-    pub fn new(reader: R) -> CacheReader<R> {
-        CacheReader {
+    /// Create a new `CacheReader` wrapping the given reader.
+    pub fn new(reader: R) -> Self {
+        Self {
             reader,
             cache: Vec::new(),
         }
@@ -45,11 +47,11 @@ impl<R: AsyncRead> AsyncRead for CacheReader<R> {
 }
 
 impl<R: AsyncRead> CacheRead for CacheReader<R> {
-    fn consume(&mut self, len: usize) {
-        self.cache.drain(..len);
+    fn consume(&mut self, amt: usize) {
+        self.cache.drain(..amt);
     }
 
     fn restore(&mut self, data: &[u8]) {
-        self.cache.extend_from_slice(data)
+        self.cache.extend_from_slice(data);
     }
 }

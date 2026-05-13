@@ -1,3 +1,5 @@
+//! Wrapper types for composing pipe readers and writers.
+
 mod owned;
 mod read;
 mod write;

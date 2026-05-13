@@ -1,6 +1,5 @@
 use crate::{io::timeout::*, timeout_ready};
 use pin_project_lite::pin_project;
-use std::marker::Unpin;
 use std::pin::Pin;
 use std::task::Poll;
 use std::{future::Future, marker::PhantomPinned};
@@ -24,6 +23,7 @@ where
 }
 
 pin_project! {
+    /// Future that reads into a byte slice with a timeout.
     pub struct ReadTimeout<'a, R: ?Sized> {
         reader: &'a mut R,
         buf: &'a mut [u8],

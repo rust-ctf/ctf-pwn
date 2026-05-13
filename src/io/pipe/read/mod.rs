@@ -1,3 +1,5 @@
+//! Extension methods for reading from pipes.
+
 mod recv;
 mod recv_all;
 mod recv_regex;
@@ -19,6 +21,7 @@ use super::PipeRead;
 
 impl<R: PipeRead> PipeReadExt for R {}
 
+/// Resolves the timeout delay, falling back to a far-future duration.
 fn timeout_delay(timeout: Option<Duration>) -> Duration {
     match timeout {
         Some(delay) => delay,
@@ -26,8 +29,10 @@ fn timeout_delay(timeout: Option<Duration>) -> Duration {
     }
 }
 
+/// Extension trait providing high-level receive operations on pipes.
 pub trait PipeReadExt: PipeRead {
-    fn recv<'a>(&'a mut self) -> Recv<'a, Self>
+    /// Receive up to 4 KiB of data.
+    fn recv(&mut self) -> Recv<'_, Self>
     where
         Self: Unpin,
     {
@@ -35,7 +40,8 @@ pub trait PipeReadExt: PipeRead {
         recv::recv(self, 1024 * 4, delay)
     }
 
-    fn recvn<'a>(&'a mut self, size: usize) -> Recv<'a, Self>
+    /// Receive up to `size` bytes of data.
+    fn recvn(&mut self, size: usize) -> Recv<'_, Self>
     where
         Self: Unpin,
     {
@@ -43,7 +49,8 @@ pub trait PipeReadExt: PipeRead {
         recv::recv(self, size, delay)
     }
 
-    fn recvall<'a>(&'a mut self) -> RecvAll<'a, Self>
+    /// Receive all data until EOF or timeout.
+    fn recvall(&mut self) -> RecvAll<'_, Self>
     where
         Self: Unpin,
     {
@@ -51,7 +58,8 @@ pub trait PipeReadExt: PipeRead {
         recv_all::recv_all(self, delay)
     }
 
-    fn recvuntil<'a, D: AsRef<[u8]>>(&'a mut self, delimiter: D) -> RecvUntil<'a, Self, D>
+    /// Receive data until the given delimiter is found.
+    fn recvuntil<D: AsRef<[u8]>>(&mut self, delimiter: D) -> RecvUntil<'_, Self, D>
     where
         Self: Unpin,
     {
@@ -59,6 +67,11 @@ pub trait PipeReadExt: PipeRead {
         recv_until::recv_until(self, delimiter, delay)
     }
 
+    /// Receive data until a regex pattern matches.
+    ///
+    /// # Errors
+    ///
+    /// Returns `regex::Error` if the pattern is invalid.
     fn recvregex<'a>(&'a mut self, pattern: &str) -> Result<RecvRegex<'a, Self>, regex::Error>
     where
         Self: Unpin,
@@ -67,6 +80,11 @@ pub trait PipeReadExt: PipeRead {
         recv_regex::recv_regex(self, pattern, delay)
     }
 
+    /// Receive data until a regex pattern matches, returning up to the match.
+    ///
+    /// # Errors
+    ///
+    /// Returns `regex::Error` if the pattern is invalid.
     fn recvuntilregex<'a>(
         &'a mut self,
         pattern: &str,

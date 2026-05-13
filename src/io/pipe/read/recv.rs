@@ -2,17 +2,16 @@ use super::RecvResult;
 use crate::io::pipe::{PipeError, PipeRead};
 use crate::io::timeout::*;
 use pin_project_lite::pin_project;
-use std::marker::Unpin;
 use std::pin::Pin;
 use std::task::Poll;
 use std::{future::Future, marker::PhantomPinned};
 use tokio::io::{AsyncRead, ReadBuf};
 
-pub(crate) fn recv<'a, R>(
-    reader: &'a mut R,
+pub(crate) fn recv<R>(
+    reader: &mut R,
     size: usize,
     timeout: impl Into<PwnTimeout>,
-) -> Recv<'a, R>
+) -> Recv<'_, R>
 where
     R: PipeRead + Unpin + ?Sized,
 {
@@ -27,6 +26,7 @@ where
 }
 
 pin_project! {
+    /// Future that receives up to a fixed number of bytes.
     pub struct Recv<'a, R: ?Sized> {
         reader: &'a mut R,
         buf: Vec<u8>,
@@ -50,7 +50,7 @@ where
     ) -> std::task::Poll<Self::Output> {
         let mut me = self.project();
 
-        let mut buf = ReadBuf::new(&mut me.buf);
+        let mut buf = ReadBuf::new(me.buf);
 
         //Fill data we have on start
         loop {
@@ -59,7 +59,7 @@ where
             }
 
             match Pin::new(&mut *me.reader).poll_read(cx, &mut buf) {
-                Poll::Ready(_) => continue,
+                Poll::Ready(_) => {}
                 Poll::Pending => break,
             }
         }
@@ -73,10 +73,10 @@ where
             .delay
             .get_or_insert_with(|| Box::pin(me.callback.timeout()));
 
-        return match delay.as_mut().poll(cx) {
+        match delay.as_mut().poll(cx) {
             Poll::Pending => std::task::Poll::Pending,
             Poll::Ready(()) => std::task::Poll::Ready(Err(PipeError::Timeout)),
-        };
+        }
     }
 }
 

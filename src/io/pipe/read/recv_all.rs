@@ -1,7 +1,6 @@
 use crate::io::pipe::{PipeError, PipeRead};
 use crate::io::timeout::*;
 use pin_project_lite::pin_project;
-use std::marker::Unpin;
 use std::pin::Pin;
 use std::task::Poll;
 use std::{future::Future, marker::PhantomPinned};
@@ -9,7 +8,7 @@ use tokio::io::{AsyncRead, ReadBuf};
 
 use super::RecvResult;
 
-pub(crate) fn recv_all<'a, R>(reader: &'a mut R, timeout: impl Into<PwnTimeout>) -> RecvAll<'a, R>
+pub(crate) fn recv_all<R>(reader: &mut R, timeout: impl Into<PwnTimeout>) -> RecvAll<'_, R>
 where
     R: PipeRead + Unpin + ?Sized,
 {
@@ -24,6 +23,7 @@ where
 }
 
 pin_project! {
+    /// Future that receives all data until EOF or timeout.
     pub struct RecvAll<'a, R: ?Sized> {
         reader: &'a mut R,
         buf: Vec<u8>,
@@ -63,19 +63,19 @@ where
                 return Poll::Ready(Ok(res.into()));
             }
 
-            me.buf.append(&mut buf.filled().to_vec())
+            me.buf.append(&mut buf.filled().to_vec());
         }
 
         let delay = me
             .delay
             .get_or_insert_with(|| Box::pin(me.callback.timeout()));
 
-        return match delay.as_mut().poll(cx) {
+        match delay.as_mut().poll(cx) {
             Poll::Pending => std::task::Poll::Pending,
             Poll::Ready(()) => {
                 let res: &[u8] = me.buf.as_ref();
-                return Poll::Ready(Ok(res.into()));
+                Poll::Ready(Ok(res.into()))
             }
-        };
+        }
     }
 }

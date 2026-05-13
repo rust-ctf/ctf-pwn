@@ -2,7 +2,6 @@ use crate::io::pipe::{PipeError, PipeRead};
 use crate::io::timeout::*;
 use pin_project_lite::pin_project;
 use regex::bytes::*;
-use std::marker::Unpin;
 use std::pin::Pin;
 use std::str::FromStr;
 use std::task::Poll;
@@ -32,6 +31,7 @@ where
 }
 
 pin_project! {
+    /// Future that receives data until a regex pattern matches, returning up to the match.
     pub struct RecvUntilRegex<'a, R: ?Sized> {
         reader: &'a mut R,
         buf: Vec<u8>,
@@ -67,30 +67,27 @@ where
 
             //EOF
             if buf.filled().is_empty() {
-                me.reader.restore(&me.buf);
+                me.reader.restore(me.buf);
                 return Poll::Ready(Err(PipeError::UnexpectedEof));
             }
 
             me.buf.append(&mut buf.filled().to_vec());
 
             //TODO: Optimize to only use last part of buff (of pattern len) when pattern matching
-            match me.rx.captures(&me.buf) {
-                Some(capture) => {
-                    let full_match = capture
-                        .get(0)
-                        .expect("Failed to get regex match value")
-                        .as_bytes();
-                    let delim_len = full_match.len();
-                    let offset = kmp::kmp_find(full_match, &me.buf)
-                        .expect("Failed to get regex match offset");
+            if let Some(capture) = me.rx.captures(me.buf) {
+                let full_match = capture
+                    .get(0)
+                    .expect("Failed to get regex match value")
+                    .as_bytes();
+                let delim_len = full_match.len();
+                let offset = kmp::kmp_find(full_match, me.buf)
+                    .expect("Failed to get regex match offset");
 
-                    let drain_index = offset + delim_len;
-                    let restore_data = &me.buf[drain_index..];
-                    me.reader.restore(restore_data);
-                    let res: &[u8] = &me.buf[..drain_index];
-                    return Poll::Ready(Ok(res.into()));
-                }
-                None => {}
+                let drain_index = offset + delim_len;
+                let restore_data = &me.buf[drain_index..];
+                me.reader.restore(restore_data);
+                let res: &[u8] = &me.buf[..drain_index];
+                return Poll::Ready(Ok(res.into()));
             }
         }
 
@@ -98,12 +95,12 @@ where
             .delay
             .get_or_insert_with(|| Box::pin(me.callback.timeout()));
 
-        return match delay.as_mut().poll(cx) {
+        match delay.as_mut().poll(cx) {
             Poll::Pending => std::task::Poll::Pending,
             Poll::Ready(()) => {
-                me.reader.restore(&me.buf);
-                return Poll::Ready(Err(PipeError::Timeout));
+                me.reader.restore(me.buf);
+                Poll::Ready(Err(PipeError::Timeout))
             }
-        };
+        }
     }
 }

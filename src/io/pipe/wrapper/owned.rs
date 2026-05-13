@@ -11,6 +11,7 @@ use crate::io::{
 use super::{PipeReader, PipeWriter};
 
 pin_project! {
+    /// Owned pipe combining separate reader and writer halves.
     pub struct OwnedPipe<R, W> {
         #[pin]
         reader: PipeReader<R>,
@@ -24,8 +25,9 @@ where
     PipeReader<R>: PipeRead,
     PipeWriter<W>: PipeWrite,
 {
-    pub fn new(reader: R, writer: W) -> OwnedPipe<R, W> {
-        OwnedPipe {
+    /// Create a new `OwnedPipe` from reader and writer halves.
+    pub fn new(reader: R, writer: W) -> Self {
+        Self {
             reader: PipeReader::new(reader),
             writer: PipeWriter::new(writer),
         }
@@ -69,11 +71,11 @@ where
     PipeReader<R>: CacheRead,
 {
     fn consume(&mut self, amt: usize) {
-        self.reader.consume(amt)
+        self.reader.consume(amt);
     }
 
     fn restore(&mut self, data: &[u8]) {
-        self.reader.restore(data)
+        self.reader.restore(data);
     }
 }
 

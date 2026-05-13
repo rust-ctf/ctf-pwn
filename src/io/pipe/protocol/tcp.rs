@@ -5,10 +5,16 @@ use tokio::net::{
 
 use crate::io::pipe::{OwnedPipe, PipeError};
 
+/// Pipe backed by a TCP connection.
 pub type TcpPipe = OwnedPipe<OwnedReadHalf, OwnedWriteHalf>;
 
 impl TcpPipe {
-    pub async fn connect<A: ToSocketAddrs>(addr: A) -> Result<TcpPipe, PipeError> {
+    /// Connect to a TCP socket address and return a pipe.
+    ///
+    /// # Errors
+    ///
+    /// Returns `PipeError` if the TCP connection fails.
+    pub async fn connect<A: ToSocketAddrs>(addr: A) -> Result<Self, PipeError> {
         let stream = TcpStream::connect(addr).await?;
         Ok(stream.into())
     }
@@ -17,6 +23,6 @@ impl TcpPipe {
 impl From<TcpStream> for TcpPipe {
     fn from(value: TcpStream) -> Self {
         let (read_stream, write_stream) = value.into_split();
-        OwnedPipe::new(read_stream, write_stream)
+        Self::new(read_stream, write_stream)
     }
 }

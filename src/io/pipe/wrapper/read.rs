@@ -8,9 +8,11 @@ use crate::io::{
     pipe::PipeRead,
 };
 
+/// Type alias for a cached reader.
 type Reader<R> = CacheReader<R>;
 
 pin_project! {
+    /// Pipe reader wrapper with caching and timeout support.
     pub struct PipeReader<R> {
         #[pin]
         reader: Reader<R>,
@@ -22,6 +24,7 @@ impl<R> PipeReader<R>
 where
     Self: PipeRead,
 {
+    /// Create a new `PipeReader` wrapping the given reader.
     pub fn new(reader: R) -> Self {
         Self {
             reader: Reader::new(reader),
@@ -49,11 +52,11 @@ where
     Reader<R>: CacheRead,
 {
     fn consume(&mut self, amt: usize) {
-        self.reader.consume(amt)
+        self.reader.consume(amt);
     }
 
     fn restore(&mut self, data: &[u8]) {
-        self.reader.restore(data)
+        self.reader.restore(data);
     }
 }
 

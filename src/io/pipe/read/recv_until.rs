@@ -1,7 +1,6 @@
 use crate::io::pipe::{PipeError, PipeRead};
 use crate::io::timeout::*;
 use pin_project_lite::pin_project;
-use std::marker::Unpin;
 use std::pin::Pin;
 use std::task::Poll;
 use std::{future::Future, marker::PhantomPinned};
@@ -9,11 +8,11 @@ use tokio::io::{AsyncRead, ReadBuf};
 
 use super::RecvResult;
 
-pub(crate) fn recv_until<'a, R, D>(
-    reader: &'a mut R,
+pub(crate) fn recv_until<R, D>(
+    reader: &mut R,
     delimiter: D,
     timeout: impl Into<PwnTimeout>,
-) -> RecvUntil<'a, R, D>
+) -> RecvUntil<'_, R, D>
 where
     R: PipeRead + Unpin + ?Sized,
     D: AsRef<[u8]>,
@@ -30,6 +29,7 @@ where
 }
 
 pin_project! {
+    /// Future that receives data until a byte delimiter is found.
     pub struct RecvUntil<'a, R: ?Sized, D: AsRef<[u8]>> {
         reader: &'a mut R,
         buf: Vec<u8>,
@@ -68,22 +68,19 @@ where
 
             //EOF
             if buf.filled().is_empty() {
-                me.reader.restore(&me.buf);
+                me.reader.restore(me.buf);
                 return Poll::Ready(Err(PipeError::UnexpectedEof));
             }
 
             me.buf.append(&mut buf.filled().to_vec());
 
             //TODO: Optimize to only use last part of buff (of pattern len) when pattern matching
-            match kmp::kmp_find(me.delimiter.as_ref(), &me.buf) {
-                Some(offset) => {
-                    let drain_index = offset + delim_len;
-                    let restore_data = &me.buf[drain_index..];
-                    me.reader.restore(restore_data);
-                    let res: &[u8] = &me.buf[..drain_index];
-                    return Poll::Ready(Ok(res.into()));
-                }
-                None => {}
+            if let Some(offset) = kmp::kmp_find(me.delimiter.as_ref(), me.buf) {
+                let drain_index = offset + delim_len;
+                let restore_data = &me.buf[drain_index..];
+                me.reader.restore(restore_data);
+                let res: &[u8] = &me.buf[..drain_index];
+                return Poll::Ready(Ok(res.into()));
             }
         }
 
@@ -91,12 +88,12 @@ where
             .delay
             .get_or_insert_with(|| Box::pin(me.callback.timeout()));
 
-        return match delay.as_mut().poll(cx) {
+        match delay.as_mut().poll(cx) {
             Poll::Pending => std::task::Poll::Pending,
             Poll::Ready(()) => {
-                me.reader.restore(&me.buf);
-                return Poll::Ready(Err(PipeError::Timeout));
+                me.reader.restore(me.buf);
+                Poll::Ready(Err(PipeError::Timeout))
             }
-        };
+        }
     }
 }

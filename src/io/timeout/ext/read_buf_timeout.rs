@@ -1,7 +1,7 @@
 use crate::{io::timeout::*, timeout_ready};
 use bytes::BufMut;
 use pin_project_lite::pin_project;
-use std::marker::{PhantomPinned, Unpin};
+use std::marker::PhantomPinned;
 use std::pin::Pin;
 use std::task::Poll;
 use std::{future::Future, task::Context};
@@ -26,6 +26,7 @@ where
 }
 
 pin_project! {
+    /// Future that reads into a `BufMut` with a timeout.
     pub struct ReadBufTimeout<'a, R: ?Sized, B: ?Sized> {
         reader: &'a mut R,
         buf: &'a mut B,
@@ -55,7 +56,8 @@ where
 
         let n = {
             let dst = me.buf.chunk_mut();
-            let dst = unsafe { &mut *(dst as *mut _ as *mut [MaybeUninit<u8>]) };
+            // SAFETY: `UninitSlice` and `[MaybeUninit<u8>]` have the same memory layout.
+            let dst = unsafe { &mut *(std::ptr::from_mut(dst) as *mut [MaybeUninit<u8>]) };
             let mut buf = ReadBuf::uninit(dst);
             let ptr = buf.filled().as_ptr();
             timeout_ready!(

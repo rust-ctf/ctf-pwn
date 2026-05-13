@@ -13,6 +13,7 @@ use tokio::{
 use super::TestAction;
 
 pin_project! {
+    /// Async reader driven by a queue of `TestAction` values.
     pub struct AsyncTestReader {
         queue: VecDeque<TestAction>,
         #[pin]
@@ -21,6 +22,7 @@ pin_project! {
 }
 
 impl AsyncTestReader {
+    /// Create a new test reader from a slice of actions.
     pub fn new(queue: &[TestAction]) -> Self {
         Self {
             queue: VecDeque::from(queue.to_vec()),
