@@ -6,7 +6,7 @@ use tokio::net::{
 use crate::io::pipe::{OwnedPipe, PipeError};
 
 /// Pipe backed by a TCP connection.
-pub type TcpPipe = OwnedPipe<OwnedReadHalf, OwnedWriteHalf>;
+pub type TcpPipe = OwnedPipe<(), OwnedReadHalf, OwnedWriteHalf>;
 
 impl TcpPipe {
     /// Connect to a TCP socket address and return a pipe.

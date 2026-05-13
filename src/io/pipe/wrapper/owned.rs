@@ -12,29 +12,49 @@ use super::{PipeReader, PipeWriter};
 
 pin_project! {
     /// Owned pipe combining separate reader and writer halves.
-    pub struct OwnedPipe<R, W> {
+    ///
+    /// The `H` parameter holds the backing resource handle (e.g. a `Child` process).
+    /// When the pipe is dropped, the handle is dropped too, cleaning up the resource.
+    pub struct OwnedPipe<H, R, W> {
         #[pin]
         reader: PipeReader<R>,
         #[pin]
         writer: PipeWriter<W>,
+        handle: H,
     }
 }
 
-impl<R, W> OwnedPipe<R, W>
+impl<R, W> OwnedPipe<(), R, W>
 where
     PipeReader<R>: PipeRead,
     PipeWriter<W>: PipeWrite,
 {
-    /// Create a new `OwnedPipe` from reader and writer halves.
+    /// Create a new `OwnedPipe` from reader and writer halves with no backing handle.
     pub fn new(reader: R, writer: W) -> Self {
         Self {
             reader: PipeReader::new(reader),
             writer: PipeWriter::new(writer),
+            handle: (),
         }
     }
 }
 
-impl<R, W> Pipe for OwnedPipe<R, W>
+impl<H, R, W> OwnedPipe<H, R, W>
+where
+    PipeReader<R>: PipeRead,
+    PipeWriter<W>: PipeWrite,
+{
+    /// Create a new `OwnedPipe` from reader, writer, and a backing resource handle.
+    pub fn new_with_handle(reader: R, writer: W, handle: H) -> Self {
+        Self {
+            reader: PipeReader::new(reader),
+            writer: PipeWriter::new(writer),
+            handle,
+        }
+    }
+}
+
+impl<H, R, W> Pipe for OwnedPipe<H, R, W>
 where
     PipeReader<R>: PipeRead,
     PipeWriter<W>: PipeWrite,
@@ -52,7 +72,7 @@ where
     }
 }
 
-impl<R, W> AsyncRead for OwnedPipe<R, W>
+impl<H, R, W> AsyncRead for OwnedPipe<H, R, W>
 where
     PipeReader<R>: AsyncRead,
 {
@@ -66,7 +86,7 @@ where
     }
 }
 
-impl<R, W> CacheRead for OwnedPipe<R, W>
+impl<H, R, W> CacheRead for OwnedPipe<H, R, W>
 where
     PipeReader<R>: CacheRead,
 {
@@ -79,7 +99,7 @@ where
     }
 }
 
-impl<R, W> PipeRead for OwnedPipe<R, W>
+impl<H, R, W> PipeRead for OwnedPipe<H, R, W>
 where
     PipeReader<R>: PipeRead,
 {
@@ -92,7 +112,7 @@ where
     }
 }
 
-impl<R, W> AsyncWrite for OwnedPipe<R, W>
+impl<H, R, W> AsyncWrite for OwnedPipe<H, R, W>
 where
     PipeWriter<W>: AsyncWrite,
 {
@@ -122,7 +142,7 @@ where
     }
 }
 
-impl<R, W> PipeWrite for OwnedPipe<R, W>
+impl<H, R, W> PipeWrite for OwnedPipe<H, R, W>
 where
     PipeWriter<W>: PipeWrite,
 {

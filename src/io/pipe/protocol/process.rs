@@ -3,7 +3,7 @@ use std::{ffi::OsStr, process::Stdio};
 use tokio::process::*;
 
 /// Pipe backed by a child process's stdin/stdout.
-pub type StdoutPipe = OwnedPipe<ChildStdout, ChildStdin>;
+pub type StdoutPipe = OwnedPipe<Child, ChildStdout, ChildStdin>;
 
 impl StdoutPipe {
     /// Spawn a process by program name and return a pipe to it.
@@ -36,23 +36,14 @@ impl StdoutPipe {
     ///
     /// Returns `PipeError` if the process fails to spawn or its stdio handles are unavailable.
     pub fn spawn_command(mut value: Command) -> Result<Self, PipeError> {
-        let process = value
+        let mut process = value
             .stdout(Stdio::piped())
             .stdin(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()?;
 
-        let stdin = process.stdin.ok_or(PipeError::Unknown)?;
-        let stdout = process.stdout.ok_or(PipeError::Unknown)?;
-        Ok((stdin, stdout).into())
-    }
-}
-
-impl From<(ChildStdin, ChildStdout)> for StdoutPipe {
-    fn from(value: (ChildStdin, ChildStdout)) -> Self {
-        let (stdin, stdout) = value;
-        let read_stream = stdout;
-        let write_stream = stdin;
-        Self::new(read_stream, write_stream)
+        let stdin = process.stdin.take().ok_or(PipeError::Unknown)?;
+        let stdout = process.stdout.take().ok_or(PipeError::Unknown)?;
+        Ok(Self::new_with_handle(stdout, stdin, process))
     }
 }
