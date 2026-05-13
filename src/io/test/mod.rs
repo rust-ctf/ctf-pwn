@@ -1,3 +1,5 @@
+//! Test utilities for building async test readers.
+
 mod test_action;
 mod test_reader;
 

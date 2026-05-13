@@ -66,3 +66,64 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::time::Duration;
+    use crate::io::{
+        test::{AsyncTestReader, TestAction},
+        timeout::{IOTimeoutError, TimeoutReadExt},
+    };
+
+    #[tokio::test]
+    async fn read_exact_timeout_reads_exact_bytes() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(b"abcdef".to_vec())]);
+        let mut buf = [0u8; 4];
+        let n = reader
+            .read_exact_timeout(&mut buf, Duration::from_secs(1))
+            .await
+            .expect("read_exact_timeout should succeed");
+        assert_eq!(n, 4);
+        assert_eq!(&buf, b"abcd");
+    }
+
+    #[tokio::test]
+    async fn read_exact_timeout_across_chunks() {
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(b"ab".to_vec()),
+            TestAction::Data(b"cd".to_vec()),
+        ]);
+        let mut buf = [0u8; 4];
+        let n = reader
+            .read_exact_timeout(&mut buf, Duration::from_secs(1))
+            .await
+            .expect("read_exact_timeout should succeed");
+        assert_eq!(n, 4);
+        assert_eq!(&buf, b"abcd");
+    }
+
+    #[tokio::test]
+    async fn read_exact_timeout_eof_before_filled() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(b"ab".to_vec())]);
+        let mut buf = [0u8; 10];
+        let err = reader
+            .read_exact_timeout(&mut buf, Duration::from_secs(1))
+            .await
+            .expect_err("should error on short read");
+        assert!(matches!(err, IOTimeoutError::UnexpectedEof));
+    }
+
+    #[tokio::test]
+    async fn read_exact_timeout_times_out() {
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(b"ab".to_vec()),
+            TestAction::Sleep(Duration::from_secs(10)),
+        ]);
+        let mut buf = [0u8; 10];
+        let err = reader
+            .read_exact_timeout(&mut buf, Duration::from_millis(50))
+            .await
+            .expect_err("should timeout");
+        assert!(matches!(err, IOTimeoutError::Timeout));
+    }
+}

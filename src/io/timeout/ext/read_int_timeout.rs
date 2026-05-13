@@ -165,3 +165,217 @@ reader!(ReadI128LeTimeout, i128, get_i128_le);
 
 reader!(ReadF32LeTimeout, f32, get_f32_le);
 reader!(ReadF64LeTimeout, f64, get_f64_le);
+
+#[cfg(test)]
+mod test {
+    use std::time::Duration;
+    use crate::io::{
+        test::{AsyncTestReader, TestAction},
+        timeout::{IOTimeoutError, TimeoutReadExt},
+    };
+
+    // big-endian
+    #[tokio::test]
+    async fn read_u8_timeout_reads_value() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(vec![0x42])]);
+        let val = reader.read_u8_timeout(Duration::from_secs(1)).await.expect("read_u8 should succeed");
+        assert_eq!(val, 0x42);
+    }
+
+    #[tokio::test]
+    async fn read_i8_timeout_reads_negative() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(vec![0xFF])]);
+        let val = reader.read_i8_timeout(Duration::from_secs(1)).await.expect("read_i8 should succeed");
+        assert_eq!(val, -1);
+    }
+
+    #[tokio::test]
+    async fn read_u16_timeout_big_endian() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(vec![0x01, 0x02])]);
+        let val = reader.read_u16_timeout(Duration::from_secs(1)).await.expect("read_u16 should succeed");
+        assert_eq!(val, 0x0102);
+    }
+
+    #[tokio::test]
+    async fn read_i16_timeout_negative() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(vec![0xFF, 0xFE])]);
+        let val = reader.read_i16_timeout(Duration::from_secs(1)).await.expect("read_i16 should succeed");
+        assert_eq!(val, -2);
+    }
+
+    #[tokio::test]
+    async fn read_u32_timeout_big_endian() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(vec![0x00, 0x00, 0x01, 0x00])]);
+        let val = reader.read_u32_timeout(Duration::from_secs(1)).await.expect("read_u32 should succeed");
+        assert_eq!(val, 256);
+    }
+
+    #[tokio::test]
+    async fn read_i32_timeout_negative() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(vec![0xFF, 0xFF, 0xFF, 0xFF])]);
+        let val = reader.read_i32_timeout(Duration::from_secs(1)).await.expect("read_i32 should succeed");
+        assert_eq!(val, -1);
+    }
+
+    #[tokio::test]
+    async fn read_u64_timeout_big_endian() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(1234u64.to_be_bytes().to_vec())]);
+        let val = reader.read_u64_timeout(Duration::from_secs(1)).await.expect("read_u64 should succeed");
+        assert_eq!(val, 1234);
+    }
+
+    #[tokio::test]
+    async fn read_i64_timeout_negative() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data((-999i64).to_be_bytes().to_vec())]);
+        let val = reader.read_i64_timeout(Duration::from_secs(1)).await.expect("read_i64 should succeed");
+        assert_eq!(val, -999);
+    }
+
+    #[tokio::test]
+    async fn read_u128_timeout_big_endian() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(42u128.to_be_bytes().to_vec())]);
+        let val = reader.read_u128_timeout(Duration::from_secs(1)).await.expect("read_u128 should succeed");
+        assert_eq!(val, 42);
+    }
+
+    #[tokio::test]
+    async fn read_i128_timeout_negative() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data((-1i128).to_be_bytes().to_vec())]);
+        let val = reader.read_i128_timeout(Duration::from_secs(1)).await.expect("read_i128 should succeed");
+        assert_eq!(val, -1);
+    }
+
+    // little-endian
+    #[tokio::test]
+    async fn read_u16_le_timeout_little_endian() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(vec![0x02, 0x01])]);
+        let val = reader.read_u16_le_timeout(Duration::from_secs(1)).await.expect("read_u16_le should succeed");
+        assert_eq!(val, 0x0102);
+    }
+
+    #[tokio::test]
+    async fn read_i16_le_timeout_negative() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data((-2i16).to_le_bytes().to_vec())]);
+        let val = reader.read_i16_le_timeout(Duration::from_secs(1)).await.expect("read_i16_le should succeed");
+        assert_eq!(val, -2);
+    }
+
+    #[tokio::test]
+    async fn read_u32_le_timeout_little_endian() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(256u32.to_le_bytes().to_vec())]);
+        let val = reader.read_u32_le_timeout(Duration::from_secs(1)).await.expect("read_u32_le should succeed");
+        assert_eq!(val, 256);
+    }
+
+    #[tokio::test]
+    async fn read_i32_le_timeout_negative() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data((-1i32).to_le_bytes().to_vec())]);
+        let val = reader.read_i32_le_timeout(Duration::from_secs(1)).await.expect("read_i32_le should succeed");
+        assert_eq!(val, -1);
+    }
+
+    #[tokio::test]
+    async fn read_u64_le_timeout_little_endian() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(1234u64.to_le_bytes().to_vec())]);
+        let val = reader.read_u64_le_timeout(Duration::from_secs(1)).await.expect("read_u64_le should succeed");
+        assert_eq!(val, 1234);
+    }
+
+    #[tokio::test]
+    async fn read_i64_le_timeout_negative() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data((-999i64).to_le_bytes().to_vec())]);
+        let val = reader.read_i64_le_timeout(Duration::from_secs(1)).await.expect("read_i64_le should succeed");
+        assert_eq!(val, -999);
+    }
+
+    #[tokio::test]
+    async fn read_u128_le_timeout_little_endian() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(42u128.to_le_bytes().to_vec())]);
+        let val = reader.read_u128_le_timeout(Duration::from_secs(1)).await.expect("read_u128_le should succeed");
+        assert_eq!(val, 42);
+    }
+
+    #[tokio::test]
+    async fn read_i128_le_timeout_negative() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data((-1i128).to_le_bytes().to_vec())]);
+        let val = reader.read_i128_le_timeout(Duration::from_secs(1)).await.expect("read_i128_le should succeed");
+        assert_eq!(val, -1);
+    }
+
+    // floats
+    #[tokio::test]
+    async fn read_f32_timeout_big_endian() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(3.14f32.to_be_bytes().to_vec())]);
+        let val = reader.read_f32_timeout(Duration::from_secs(1)).await.expect("read_f32 should succeed");
+        assert!((val - 3.14).abs() < 0.001);
+    }
+
+    #[tokio::test]
+    async fn read_f64_timeout_big_endian() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(2.718281828f64.to_be_bytes().to_vec())]);
+        let val = reader.read_f64_timeout(Duration::from_secs(1)).await.expect("read_f64 should succeed");
+        assert!((val - 2.718281828).abs() < 1e-9);
+    }
+
+    #[tokio::test]
+    async fn read_f32_le_timeout_little_endian() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(3.14f32.to_le_bytes().to_vec())]);
+        let val = reader.read_f32_le_timeout(Duration::from_secs(1)).await.expect("read_f32_le should succeed");
+        assert!((val - 3.14).abs() < 0.001);
+    }
+
+    #[tokio::test]
+    async fn read_f64_le_timeout_little_endian() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(2.718281828f64.to_le_bytes().to_vec())]);
+        let val = reader.read_f64_le_timeout(Duration::from_secs(1)).await.expect("read_f64_le should succeed");
+        assert!((val - 2.718281828).abs() < 1e-9);
+    }
+
+    // cross-chunk reads
+    #[tokio::test]
+    async fn read_u32_timeout_across_chunks() {
+        let bytes = 0xDEADBEEFu32.to_be_bytes();
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(bytes[..2].to_vec()),
+            TestAction::Data(bytes[2..].to_vec()),
+        ]);
+        let val = reader.read_u32_timeout(Duration::from_secs(1)).await.expect("read_u32 should succeed");
+        assert_eq!(val, 0xDEADBEEF);
+    }
+
+    #[tokio::test]
+    async fn read_u64_le_timeout_across_chunks() {
+        let bytes = 0x0102030405060708u64.to_le_bytes();
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(bytes[..3].to_vec()),
+            TestAction::Data(bytes[3..].to_vec()),
+        ]);
+        let val = reader.read_u64_le_timeout(Duration::from_secs(1)).await.expect("read_u64_le should succeed");
+        assert_eq!(val, 0x0102030405060708);
+    }
+
+    // EOF and timeout errors
+    #[tokio::test]
+    async fn read_u8_timeout_eof() {
+        let mut reader = AsyncTestReader::new(&[]);
+        let err = reader.read_u8_timeout(Duration::from_secs(1)).await.expect_err("should error on EOF");
+        assert!(matches!(err, IOTimeoutError::UnexpectedEof));
+    }
+
+    #[tokio::test]
+    async fn read_u32_timeout_short_eof() {
+        let mut reader = AsyncTestReader::new(&[TestAction::Data(vec![0x01, 0x02])]);
+        let err = reader.read_u32_timeout(Duration::from_secs(1)).await.expect_err("should error on short read");
+        assert!(matches!(err, IOTimeoutError::UnexpectedEof));
+    }
+
+    #[tokio::test]
+    async fn read_u32_timeout_times_out() {
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(vec![0x01]),
+            TestAction::Sleep(Duration::from_secs(10)),
+        ]);
+        let err = reader.read_u32_timeout(Duration::from_millis(50)).await.expect_err("should timeout");
+        assert!(matches!(err, IOTimeoutError::Timeout));
+    }
+}

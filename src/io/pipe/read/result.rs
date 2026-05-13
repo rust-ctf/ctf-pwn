@@ -91,3 +91,56 @@ impl<'a> From<regex::bytes::Captures<'a>> for RecvRegexResult {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::time::Duration;
+    use crate::io::{
+        pipe::{PipeRead, PipeReadExt, PipeReader},
+        test::{AsyncTestReader, TestAction},
+    };
+
+    fn test_pipe(actions: &[TestAction]) -> PipeReader<AsyncTestReader> {
+        let mut pipe = PipeReader::new(AsyncTestReader::new(actions));
+        pipe.set_read_timeout(Some(Duration::from_millis(200)));
+        pipe
+    }
+
+    #[tokio::test]
+    async fn recv_result_as_hex() {
+        let mut pipe = test_pipe(&[TestAction::Data(vec![0xDE, 0xAD, 0xBE, 0xEF])]);
+        let result = pipe.recv().await.expect("recv should succeed");
+        assert_eq!(result.as_hex(), "deadbeef");
+    }
+
+    #[tokio::test]
+    async fn recv_result_as_utf8() {
+        let mut pipe = test_pipe(&[TestAction::Data(b"hello".to_vec())]);
+        let result = pipe.recv().await.expect("recv should succeed");
+        assert_eq!(result.as_utf8().expect("valid utf8"), "hello");
+    }
+
+    #[tokio::test]
+    async fn recv_result_as_utf8_invalid() {
+        let mut pipe = test_pipe(&[TestAction::Data(vec![0xFF, 0xFE])]);
+        let result = pipe.recv().await.expect("recv should succeed");
+        assert!(result.as_utf8().is_err());
+    }
+
+    #[tokio::test]
+    async fn recv_result_as_ascii() {
+        let mut pipe = test_pipe(&[TestAction::Data(b"ascii".to_vec())]);
+        let result = pipe.recv().await.expect("recv should succeed");
+        assert_eq!(
+            result.as_ascii().expect("valid ascii").as_str(),
+            "ascii"
+        );
+    }
+
+    #[tokio::test]
+    async fn recv_result_as_ascii_invalid() {
+        let mut pipe = test_pipe(&[TestAction::Data(vec![0x80])]);
+        let result = pipe.recv().await.expect("recv should succeed");
+        assert!(result.as_ascii().is_err());
+    }
+}

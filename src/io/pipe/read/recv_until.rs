@@ -97,3 +97,90 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::time::Duration;
+    use crate::io::{
+        pipe::{PipeError, PipeRead, PipeReadExt, PipeReader},
+        test::{AsyncTestReader, TestAction},
+    };
+
+    fn test_pipe(actions: &[TestAction]) -> PipeReader<AsyncTestReader> {
+        let mut pipe = PipeReader::new(AsyncTestReader::new(actions));
+        pipe.set_read_timeout(Some(Duration::from_millis(200)));
+        pipe
+    }
+
+    fn test_pipe_with_timeout(actions: &[TestAction], ms: u64) -> PipeReader<AsyncTestReader> {
+        let mut pipe = test_pipe(actions);
+        pipe.set_read_timeout(Some(Duration::from_millis(ms)));
+        pipe
+    }
+
+    #[tokio::test]
+    async fn recvuntil_finds_delimiter() {
+        let mut pipe = test_pipe(&[TestAction::Data(b"hello\nworld".to_vec())]);
+        let result = pipe.recvuntil(b"\n").await.expect("recvuntil should succeed");
+        assert_eq!(result.as_bytes(), b"hello\n");
+    }
+
+    #[tokio::test]
+    async fn recvuntil_multi_byte_delimiter() {
+        let mut pipe = test_pipe(&[TestAction::Data(b"foo::bar::baz".to_vec())]);
+        let result = pipe.recvuntil(b"::").await.expect("recvuntil should succeed");
+        assert_eq!(result.as_bytes(), b"foo::");
+    }
+
+    #[tokio::test]
+    async fn recvuntil_delimiter_across_chunks() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"hel".to_vec()),
+                TestAction::Data(b"lo\nworld".to_vec()),
+            ],
+            500,
+        );
+        let result = pipe.recvuntil(b"\n").await.expect("recvuntil should succeed");
+        assert_eq!(result.as_bytes(), b"hello\n");
+    }
+
+    #[tokio::test]
+    async fn recvuntil_timeout_when_delimiter_not_found() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"no delimiter here".to_vec()),
+                TestAction::Sleep(Duration::from_secs(10)),
+            ],
+            50,
+        );
+        let err = pipe.recvuntil(b"\n").await.expect_err("should timeout");
+        assert!(matches!(err, PipeError::Timeout));
+    }
+
+    #[tokio::test]
+    async fn recvuntil_eof_before_delimiter() {
+        let mut pipe = test_pipe(&[TestAction::Data(b"no newline".to_vec())]);
+        let err = pipe
+            .recvuntil(b"\n")
+            .await
+            .expect_err("should error on EOF");
+        assert!(matches!(err, PipeError::UnexpectedEof));
+    }
+
+    #[tokio::test]
+    async fn recvuntil_delimiter_at_start() {
+        let mut pipe = test_pipe(&[TestAction::Data(b"\nhello".to_vec())]);
+        let result = pipe.recvuntil(b"\n").await.expect("recvuntil should succeed");
+        assert_eq!(result.as_bytes(), b"\n");
+    }
+
+    #[tokio::test]
+    async fn recvuntil_restores_data_after_delimiter() {
+        let mut pipe = test_pipe(&[TestAction::Data(b"first\nsecond\n".to_vec())]);
+        let r1 = pipe.recvuntil(b"\n").await.expect("first recvuntil");
+        assert_eq!(r1.as_bytes(), b"first\n");
+        let r2 = pipe.recvuntil(b"\n").await.expect("second recvuntil");
+        assert_eq!(r2.as_bytes(), b"second\n");
+    }
+}

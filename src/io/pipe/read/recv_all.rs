@@ -79,3 +79,67 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::time::Duration;
+    use crate::io::{
+        pipe::{PipeRead, PipeReadExt, PipeReader},
+        test::{AsyncTestReader, TestAction},
+    };
+
+    fn test_pipe_with_timeout(actions: &[TestAction], ms: u64) -> PipeReader<AsyncTestReader> {
+        let mut pipe = PipeReader::new(AsyncTestReader::new(actions));
+        pipe.set_read_timeout(Some(Duration::from_millis(ms)));
+        pipe
+    }
+
+    #[tokio::test]
+    async fn recvall_collects_all_until_eof() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"part1".to_vec()),
+                TestAction::Data(b"part2".to_vec()),
+            ],
+            200,
+        );
+        let result = pipe.recvall().await.expect("recvall should succeed");
+        assert_eq!(result.as_bytes(), b"part1part2");
+    }
+
+    #[tokio::test]
+    async fn recvall_returns_data_on_timeout() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"some".to_vec()),
+                TestAction::Sleep(Duration::from_secs(10)),
+            ],
+            100,
+        );
+        let result = pipe.recvall().await.expect("recvall should succeed");
+        assert_eq!(result.as_bytes(), b"some");
+    }
+
+    #[tokio::test]
+    async fn recvall_empty_on_immediate_eof() {
+        let mut pipe = test_pipe_with_timeout(&[], 200);
+        let result = pipe.recvall().await.expect("recvall should succeed");
+        assert!(result.as_bytes().is_empty());
+    }
+
+    #[tokio::test]
+    async fn recvall_multiple_chunks_with_sleeps() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"a".to_vec()),
+                TestAction::Sleep(Duration::from_millis(10)),
+                TestAction::Data(b"b".to_vec()),
+                TestAction::Sleep(Duration::from_millis(10)),
+                TestAction::Data(b"c".to_vec()),
+            ],
+            500,
+        );
+        let result = pipe.recvall().await.expect("recvall should succeed");
+        assert_eq!(result.as_bytes(), b"abc");
+    }
+}

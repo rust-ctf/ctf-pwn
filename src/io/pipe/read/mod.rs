@@ -96,3 +96,57 @@ pub trait PipeReadExt: PipeRead {
         recv_until_regex::recv_until_regex(self, pattern, delay)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use std::time::Duration;
+    use crate::io::{
+        pipe::{PipeRead, PipeReadExt, PipeReader},
+        test::{AsyncTestReader, TestAction},
+    };
+
+    fn test_pipe(actions: &[TestAction]) -> PipeReader<AsyncTestReader> {
+        let mut pipe = PipeReader::new(AsyncTestReader::new(actions));
+        pipe.set_read_timeout(Some(Duration::from_millis(200)));
+        pipe
+    }
+
+    #[tokio::test]
+    async fn recvn_limits_to_requested_size() {
+        let mut pipe = test_pipe(&[TestAction::Data(b"abcdefghij".to_vec())]);
+        let result = pipe.recvn(5).await.expect("recvn should succeed");
+        assert_eq!(result.as_bytes(), b"abcde");
+    }
+
+    #[tokio::test]
+    async fn recvn_returns_less_when_not_enough() {
+        let mut pipe = test_pipe(&[TestAction::Data(b"ab".to_vec())]);
+        let result = pipe.recvn(10).await.expect("recvn should succeed");
+        assert_eq!(result.as_bytes(), b"ab");
+    }
+
+    #[tokio::test]
+    async fn recvn_exact_boundary() {
+        let mut pipe = test_pipe(&[TestAction::Data(b"exact".to_vec())]);
+        let result = pipe.recvn(5).await.expect("recvn should succeed");
+        assert_eq!(result.as_bytes(), b"exact");
+    }
+
+    #[tokio::test]
+    async fn set_read_timeout_changes_behavior() {
+        let mut pipe = test_pipe(&[TestAction::Sleep(Duration::from_secs(10))]);
+        pipe.set_read_timeout(Some(Duration::from_millis(50)));
+        let start = tokio::time::Instant::now();
+        let _ = pipe.recv().await;
+        let elapsed = start.elapsed();
+        assert!(elapsed < Duration::from_millis(300), "timeout should be fast");
+    }
+
+    #[tokio::test]
+    async fn set_read_timeout_to_none_falls_back_to_far_away() {
+        let mut pipe = test_pipe(&[TestAction::Data(b"data".to_vec())]);
+        pipe.set_read_timeout(None);
+        let result = pipe.recv().await.expect("should succeed with immediate data");
+        assert_eq!(result.as_bytes(), b"data");
+    }
+}
