@@ -23,7 +23,7 @@ pin_project! {
 impl AsyncTestReader {
     pub fn new(queue: &[TestAction]) -> Self {
         Self {
-            queue: queue.into(),
+            queue: VecDeque::from(queue.to_vec()),
             sleeper: None,
         }
     }
@@ -55,6 +55,7 @@ impl AsyncRead for AsyncTestReader {
                     if !data.is_empty() {
                         this.queue.push_front(TestAction::Data(data));
                     }
+                    this.sleeper.set(None);
                     Poll::Ready(Ok(()))
                 }
                 Some(TestAction::Sleep(duration)) => {
