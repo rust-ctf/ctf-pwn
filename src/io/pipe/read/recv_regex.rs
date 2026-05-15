@@ -189,4 +189,61 @@ mod test {
             .expect_err("should error on EOF");
         assert!(matches!(err, PipeError::UnexpectedEof));
     }
+
+    #[tokio::test]
+    async fn recvregex_delayed_match_arrives_in_time() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"pre".to_vec()),
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Data(b"value=77 post".to_vec()),
+            ],
+            500,
+        );
+        let result = pipe
+            .recvregex(r"value=(\d+)")
+            .expect("valid regex")
+            .await
+            .expect("match should arrive in time");
+        assert_eq!(result.full_match().as_bytes(), b"value=77");
+    }
+
+    #[tokio::test]
+    async fn recvregex_delayed_match_arrives_too_late() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"pre".to_vec()),
+                TestAction::Sleep(Duration::from_millis(200)),
+                TestAction::Data(b"value=77 post".to_vec()),
+            ],
+            50,
+        );
+        let err = pipe
+            .recvregex(r"value=(\d+)")
+            .expect("valid regex")
+            .await
+            .expect_err("should timeout");
+        assert!(matches!(err, PipeError::Timeout));
+    }
+
+    #[tokio::test]
+    async fn recvregex_multiple_delays_before_match() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"x".to_vec()),
+                TestAction::Sleep(Duration::from_millis(15)),
+                TestAction::Data(b"y".to_vec()),
+                TestAction::Sleep(Duration::from_millis(15)),
+                TestAction::Data(b"value=88 end".to_vec()),
+            ],
+            500,
+        );
+        let result = pipe
+            .recvregex(r"value=(\d+)")
+            .expect("valid regex")
+            .await
+            .expect("cumulative delays within timeout");
+        assert_eq!(result.full_match().as_bytes(), b"value=88");
+        assert_eq!(result.groups()[1].as_bytes(), b"88");
+    }
 }

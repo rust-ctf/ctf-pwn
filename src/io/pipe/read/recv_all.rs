@@ -142,4 +142,59 @@ mod test {
         let result = pipe.recvall().await.expect("recvall should succeed");
         assert_eq!(result.as_bytes(), b"abc");
     }
+
+    #[tokio::test]
+    async fn recvall_slow_chunks_within_timeout() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"x".to_vec()),
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Data(b"y".to_vec()),
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Data(b"z".to_vec()),
+            ],
+            500,
+        );
+        let result = pipe.recvall().await.expect("should collect all before timeout");
+        assert_eq!(result.as_bytes(), b"xyz");
+    }
+
+    #[tokio::test]
+    async fn recvall_partial_data_before_timeout() {
+        // First chunk arrives fast, second chunk is delayed past timeout.
+        // recvall should return whatever was collected.
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"fast".to_vec()),
+                TestAction::Sleep(Duration::from_millis(200)),
+                TestAction::Data(b"slow".to_vec()),
+            ],
+            50,
+        );
+        let result = pipe.recvall().await.expect("should return partial data");
+        assert_eq!(result.as_bytes(), b"fast");
+    }
+
+    #[tokio::test]
+    async fn recvall_cumulative_delays_exceed_timeout() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"a".to_vec()),
+                TestAction::Sleep(Duration::from_millis(20)),
+                TestAction::Data(b"b".to_vec()),
+                TestAction::Sleep(Duration::from_millis(20)),
+                TestAction::Data(b"c".to_vec()),
+                TestAction::Sleep(Duration::from_millis(20)),
+                TestAction::Data(b"d".to_vec()),
+                TestAction::Sleep(Duration::from_millis(200)),
+                TestAction::Data(b"never".to_vec()),
+            ],
+            100,
+        );
+        let result = pipe.recvall().await.expect("should return data collected so far");
+        // Should get at least a, b, c, d but not "never"
+        let data = result.as_bytes();
+        assert!(data.starts_with(b"a"));
+        assert!(!data.ends_with(b"never"));
+    }
 }

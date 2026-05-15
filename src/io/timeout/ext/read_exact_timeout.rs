@@ -126,4 +126,74 @@ mod test {
             .expect_err("should timeout");
         assert!(matches!(err, IOTimeoutError::Timeout));
     }
+
+    #[tokio::test]
+    async fn read_exact_timeout_delayed_chunks_arrive_in_time() {
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(b"ab".to_vec()),
+            TestAction::Sleep(Duration::from_millis(30)),
+            TestAction::Data(b"cd".to_vec()),
+        ]);
+        let mut buf = [0u8; 4];
+        let n = reader
+            .read_exact_timeout(&mut buf, Duration::from_millis(500))
+            .await
+            .expect("chunks arrive before timeout");
+        assert_eq!(n, 4);
+        assert_eq!(&buf, b"abcd");
+    }
+
+    #[tokio::test]
+    async fn read_exact_timeout_delayed_chunks_arrive_too_late() {
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(b"ab".to_vec()),
+            TestAction::Sleep(Duration::from_millis(200)),
+            TestAction::Data(b"cd".to_vec()),
+        ]);
+        let mut buf = [0u8; 4];
+        let err = reader
+            .read_exact_timeout(&mut buf, Duration::from_millis(50))
+            .await
+            .expect_err("should timeout waiting for remaining bytes");
+        assert!(matches!(err, IOTimeoutError::Timeout));
+    }
+
+    #[tokio::test]
+    async fn read_exact_timeout_multiple_small_delays_succeed() {
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(b"a".to_vec()),
+            TestAction::Sleep(Duration::from_millis(15)),
+            TestAction::Data(b"b".to_vec()),
+            TestAction::Sleep(Duration::from_millis(15)),
+            TestAction::Data(b"c".to_vec()),
+            TestAction::Sleep(Duration::from_millis(15)),
+            TestAction::Data(b"d".to_vec()),
+        ]);
+        let mut buf = [0u8; 4];
+        let n = reader
+            .read_exact_timeout(&mut buf, Duration::from_millis(500))
+            .await
+            .expect("cumulative delays within timeout");
+        assert_eq!(n, 4);
+        assert_eq!(&buf, b"abcd");
+    }
+
+    #[tokio::test]
+    async fn read_exact_timeout_multiple_small_delays_exceed() {
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(b"a".to_vec()),
+            TestAction::Sleep(Duration::from_millis(30)),
+            TestAction::Data(b"b".to_vec()),
+            TestAction::Sleep(Duration::from_millis(30)),
+            TestAction::Data(b"c".to_vec()),
+            TestAction::Sleep(Duration::from_millis(30)),
+            TestAction::Data(b"d".to_vec()),
+        ]);
+        let mut buf = [0u8; 4];
+        let err = reader
+            .read_exact_timeout(&mut buf, Duration::from_millis(50))
+            .await
+            .expect_err("cumulative delays exceed timeout");
+        assert!(matches!(err, IOTimeoutError::Timeout));
+    }
 }

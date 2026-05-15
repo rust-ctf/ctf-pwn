@@ -150,4 +150,60 @@ mod test {
         let err = pipe.recv().await.expect_err("recv on immediate EOF should timeout");
         assert!(matches!(err, PipeError::Timeout));
     }
+
+    #[tokio::test]
+    async fn recv_delay_within_timeout_succeeds() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Data(b"made it".to_vec()),
+            ],
+            200,
+        );
+        let result = pipe.recv().await.expect("should arrive in time");
+        assert_eq!(result.as_bytes(), b"made it");
+    }
+
+    #[tokio::test]
+    async fn recv_delay_exceeds_timeout_fails() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Sleep(Duration::from_millis(200)),
+                TestAction::Data(b"too late".to_vec()),
+            ],
+            50,
+        );
+        let err = pipe.recv().await.expect_err("should timeout");
+        assert!(matches!(err, PipeError::Timeout));
+    }
+
+    #[tokio::test]
+    async fn recv_multiple_small_delays_within_timeout() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Sleep(Duration::from_millis(20)),
+                TestAction::Sleep(Duration::from_millis(20)),
+                TestAction::Sleep(Duration::from_millis(20)),
+                TestAction::Data(b"after 3 sleeps".to_vec()),
+            ],
+            500,
+        );
+        let result = pipe.recv().await.expect("cumulative delay fits in timeout");
+        assert_eq!(result.as_bytes(), b"after 3 sleeps");
+    }
+
+    #[tokio::test]
+    async fn recv_multiple_small_delays_exceed_timeout() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Data(b"too slow".to_vec()),
+            ],
+            50,
+        );
+        let err = pipe.recv().await.expect_err("cumulative delay exceeds timeout");
+        assert!(matches!(err, PipeError::Timeout));
+    }
 }

@@ -197,4 +197,80 @@ mod test {
             .expect("second recv");
         assert_eq!(r2.as_bytes(), b"line2\n");
     }
+
+    #[tokio::test]
+    async fn recvuntilregex_delayed_match_arrives_in_time() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"data".to_vec()),
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Data(b"END rest".to_vec()),
+            ],
+            500,
+        );
+        let result = pipe
+            .recvuntilregex(r"END")
+            .expect("valid regex")
+            .await
+            .expect("match should arrive in time");
+        assert_eq!(result.as_bytes(), b"dataEND");
+    }
+
+    #[tokio::test]
+    async fn recvuntilregex_delayed_match_arrives_too_late() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"data".to_vec()),
+                TestAction::Sleep(Duration::from_millis(200)),
+                TestAction::Data(b"END rest".to_vec()),
+            ],
+            50,
+        );
+        let err = pipe
+            .recvuntilregex(r"END")
+            .expect("valid regex")
+            .await
+            .expect_err("should timeout");
+        assert!(matches!(err, PipeError::Timeout));
+    }
+
+    #[tokio::test]
+    async fn recvuntilregex_cumulative_delays_within_timeout() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"a".to_vec()),
+                TestAction::Sleep(Duration::from_millis(15)),
+                TestAction::Data(b"b".to_vec()),
+                TestAction::Sleep(Duration::from_millis(15)),
+                TestAction::Data(b"cEND rest".to_vec()),
+            ],
+            500,
+        );
+        let result = pipe
+            .recvuntilregex(r"END")
+            .expect("valid regex")
+            .await
+            .expect("cumulative delays within timeout");
+        assert_eq!(result.as_bytes(), b"abcEND");
+    }
+
+    #[tokio::test]
+    async fn recvuntilregex_cumulative_delays_exceed_timeout() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"a".to_vec()),
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Data(b"b".to_vec()),
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Data(b"cEND".to_vec()),
+            ],
+            50,
+        );
+        let err = pipe
+            .recvuntilregex(r"END")
+            .expect("valid regex")
+            .await
+            .expect_err("cumulative delays exceed timeout");
+        assert!(matches!(err, PipeError::Timeout));
+    }
 }

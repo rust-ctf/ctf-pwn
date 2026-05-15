@@ -378,4 +378,56 @@ mod test {
         let err = reader.read_u32_timeout(Duration::from_millis(50)).await.expect_err("should timeout");
         assert!(matches!(err, IOTimeoutError::Timeout));
     }
+
+    #[tokio::test]
+    async fn read_u32_delayed_bytes_arrive_in_time() {
+        let bytes = 0xCAFEBABEu32.to_be_bytes();
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(bytes[..2].to_vec()),
+            TestAction::Sleep(Duration::from_millis(30)),
+            TestAction::Data(bytes[2..].to_vec()),
+        ]);
+        let val = reader.read_u32_timeout(Duration::from_millis(500)).await.expect("should arrive in time");
+        assert_eq!(val, 0xCAFEBABE);
+    }
+
+    #[tokio::test]
+    async fn read_u32_delayed_bytes_arrive_too_late() {
+        let bytes = 0xCAFEBABEu32.to_be_bytes();
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(bytes[..2].to_vec()),
+            TestAction::Sleep(Duration::from_millis(200)),
+            TestAction::Data(bytes[2..].to_vec()),
+        ]);
+        let err = reader.read_u32_timeout(Duration::from_millis(50)).await.expect_err("should timeout");
+        assert!(matches!(err, IOTimeoutError::Timeout));
+    }
+
+    #[tokio::test]
+    async fn read_u64_le_byte_by_byte_with_delays_succeeds() {
+        let bytes = 0x0807060504030201u64.to_le_bytes();
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(vec![bytes[0]]),
+            TestAction::Sleep(Duration::from_millis(10)),
+            TestAction::Data(vec![bytes[1]]),
+            TestAction::Sleep(Duration::from_millis(10)),
+            TestAction::Data(bytes[2..].to_vec()),
+        ]);
+        let val = reader.read_u64_le_timeout(Duration::from_millis(500)).await.expect("should succeed");
+        assert_eq!(val, 0x0807060504030201);
+    }
+
+    #[tokio::test]
+    async fn read_u64_le_byte_by_byte_delays_exceed_timeout() {
+        let bytes = 0x0807060504030201u64.to_le_bytes();
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Data(vec![bytes[0]]),
+            TestAction::Sleep(Duration::from_millis(30)),
+            TestAction::Data(vec![bytes[1]]),
+            TestAction::Sleep(Duration::from_millis(30)),
+            TestAction::Data(bytes[2..].to_vec()),
+        ]);
+        let err = reader.read_u64_le_timeout(Duration::from_millis(50)).await.expect_err("should timeout");
+        assert!(matches!(err, IOTimeoutError::Timeout));
+    }
 }

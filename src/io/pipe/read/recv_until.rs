@@ -183,4 +183,66 @@ mod test {
         let r2 = pipe.recvuntil(b"\n").await.expect("second recvuntil");
         assert_eq!(r2.as_bytes(), b"second\n");
     }
+
+    #[tokio::test]
+    async fn recvuntil_delayed_delimiter_arrives_in_time() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"waiting".to_vec()),
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Data(b"\nrest".to_vec()),
+            ],
+            500,
+        );
+        let result = pipe.recvuntil(b"\n").await.expect("delimiter should arrive in time");
+        assert_eq!(result.as_bytes(), b"waiting\n");
+    }
+
+    #[tokio::test]
+    async fn recvuntil_delayed_delimiter_arrives_too_late() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"waiting".to_vec()),
+                TestAction::Sleep(Duration::from_millis(200)),
+                TestAction::Data(b"\nrest".to_vec()),
+            ],
+            50,
+        );
+        let err = pipe.recvuntil(b"\n").await.expect_err("should timeout");
+        assert!(matches!(err, PipeError::Timeout));
+    }
+
+    #[tokio::test]
+    async fn recvuntil_multiple_delays_before_delimiter() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"a".to_vec()),
+                TestAction::Sleep(Duration::from_millis(20)),
+                TestAction::Data(b"b".to_vec()),
+                TestAction::Sleep(Duration::from_millis(20)),
+                TestAction::Data(b"c\nrest".to_vec()),
+            ],
+            500,
+        );
+        let result = pipe.recvuntil(b"\n").await.expect("should succeed");
+        assert_eq!(result.as_bytes(), b"abc\n");
+    }
+
+    #[tokio::test]
+    async fn recvuntil_cumulative_delays_exceed_timeout() {
+        let mut pipe = test_pipe_with_timeout(
+            &[
+                TestAction::Data(b"a".to_vec()),
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Data(b"b".to_vec()),
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Data(b"c".to_vec()),
+                TestAction::Sleep(Duration::from_millis(30)),
+                TestAction::Data(b"\n".to_vec()),
+            ],
+            50,
+        );
+        let err = pipe.recvuntil(b"\n").await.expect_err("cumulative delays exceed timeout");
+        assert!(matches!(err, PipeError::Timeout));
+    }
 }

@@ -112,4 +112,32 @@ mod test {
         assert_eq!(n, 2);
         assert_eq!(&buf[..n], b"ab");
     }
+
+    #[tokio::test]
+    async fn read_timeout_delay_within_timeout_succeeds() {
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Sleep(Duration::from_millis(30)),
+            TestAction::Data(b"arrived".to_vec()),
+        ]);
+        let mut buf = [0u8; 32];
+        let n = reader
+            .read_timeout(&mut buf, Duration::from_millis(500))
+            .await
+            .expect("data should arrive before timeout");
+        assert_eq!(&buf[..n], b"arrived");
+    }
+
+    #[tokio::test]
+    async fn read_timeout_delay_exceeds_timeout_fails() {
+        let mut reader = AsyncTestReader::new(&[
+            TestAction::Sleep(Duration::from_millis(200)),
+            TestAction::Data(b"too late".to_vec()),
+        ]);
+        let mut buf = [0u8; 32];
+        let err = reader
+            .read_timeout(&mut buf, Duration::from_millis(50))
+            .await
+            .expect_err("should timeout");
+        assert!(matches!(err, IOTimeoutError::Timeout));
+    }
 }
