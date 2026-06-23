@@ -9,7 +9,45 @@ repository = "https://github.com/rust-ctf/ctf-pwn"
 keywords = ["ctf", "pwn", "exploit", "security"]
 categories = ["command-line-utilities"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = ["std", "runtime-tokio", "regex"]
+std = ["alloc", "thiserror/std"]
+alloc = []
+runtime-tokio = ["std", "dep:tokio"]
+runtime-async-std = ["std", "dep:async-std", "dep:futures-timer", "dep:futures"]
+runtime-embassy = ["dep:embassy-time", "dep:embedded-io-async"]
+regex = ["dep:regex"]
+tui = ["std", "dep:crossterm", "dep:ratatui"]
+
+[dependencies]
+# Always-on (no_std compatible)
+pin-project-lite = "0.2.16"
+thiserror = { version = "2.0.15", default-features = false }
+kmp = "0.1.1"
+
+# Optional: runtime-tokio
+tokio = { version = "1.47.1", features = ["io-util", "macros", "net", "process", "time", "test-util"], optional = true }
+
+# Optional: runtime-async-std
+async-std = { version = "1.13", optional = true }
+futures-timer = { version = "3.0", optional = true }
+futures = { version = "0.3.31", optional = true }
+
+# Optional: runtime-embassy
+embassy-time = { version = "0.4", optional = true }
+embedded-io-async = { version = "0.6", optional = true }
+
+# Optional: regex
+regex = { version = "1.11.1", optional = true }
+
+# Optional: tui
+crossterm = { version = "0.28", optional = true }
+ratatui = { version = "0.29", optional = true }
+
+# Optional utility (std, for result display)
+hex = { version = "0.4.3", optional = true }
+ascii = { version = "1.1.0", optional = true }
+
 
 [lints.rust]
 ambiguous_negative_literals = "warn"
@@ -18,8 +56,23 @@ missing_docs = "warn"
 redundant_imports = "warn"
 redundant_lifetimes = "warn"
 trivial_numeric_casts = "warn"
+unreachable_pub = "warn"
 unsafe_op_in_unsafe_fn = "warn"
 unused_lifetimes = "warn"
+
+# Allow our special-purpose nonstandard cfg attributes.
+# - coverage / coverage_nightly: set by cargo-llvm-cov to enable nightly coverage attributes.
+# - loom: set via RUSTFLAGS to swap in the loom model-checker for atomics in select crates.
+# - utc_backend: opt-in flag for the UTC (Microsoft) Rust codegen backend, which caps type
+#   alignment at 8192 bytes. Crates that intentionally exercise larger alignments (e.g.
+#   multitude's over-alignment guard tests) gate the offending items on this cfg so they
+#   compile out when targeting UTC. Set via RUSTFLAGS="--cfg utc_backend" in pipelines
+#   that pin a UTC toolchain (ms-prod-1.95+).
+unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(coverage,coverage_nightly)',
+    'cfg(loom)',
+    'cfg(utc_backend)',
+] }
 
 [lints.clippy]
 cargo = { level = "warn", priority = -1 }
@@ -31,7 +84,7 @@ perf = { level = "warn", priority = -1 }
 style = { level = "warn", priority = -1 }
 suspicious = { level = "warn", priority = -1 }
 
-# Useful restriction lints
+# Lints from the `restriction` group that are not enabled by categories above but are still useful.
 allow_attributes = "warn"
 allow_attributes_without_reason = "warn"
 as_pointer_underscore = "warn"
@@ -55,9 +108,10 @@ unnecessary_safety_comment = "warn"
 unnecessary_safety_doc = "warn"
 unneeded_field_pattern = "warn"
 unused_result_ok = "warn"
+expect_used = "warn"
 unwrap_used = "warn"
 
-# Disabled category lints
+# Below are undesirable lint rules that are enabled by the categories above but are not useful.
 option_if_let_else = "allow"
 missing_const_for_fn = "allow"
 redundant_pub_crate = "allow"
@@ -69,14 +123,3 @@ multiple_crate_versions = "allow"
 [lints.rustdoc]
 missing_crate_level_docs = "warn"
 unescaped_backticks = "warn"
-
-[dependencies]
-ascii = "1.1.0"
-bytes = "1.10.1"
-futures = "0.3.31"
-hex = "0.4.3"
-kmp = "0.1.1"
-pin-project-lite = "0.2.16"
-regex = "1.11.1"
-thiserror = "2.0.15"
-tokio = { version = "1.47.1", features = ["bytes", "fs", "io-util", "macros", "net", "parking_lot", "process", "test-util", "time"] }
