@@ -19,6 +19,10 @@ pub mod smol;
 #[cfg(feature = "runtime-embassy")]
 pub mod embassy;
 
+#[cfg(test)]
+#[cfg(not(feature = "runtime-embassy"))]
+mod tests;
+
 /// The timer implementation for the selected runtime.
 #[cfg(feature = "runtime-tokio")]
 pub type Timer = self::tokio::TokioTimer;
