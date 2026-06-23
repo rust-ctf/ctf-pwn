@@ -1,10 +1,10 @@
 use core::future::Future;
 use core::pin::pin;
-use core::task::{Context, Waker};
 use core::time::Duration;
 
 use crate::io::runtime_test::runtime_test;
 use super::{Timeout, Timer, TimerProvider, test_helpers};
+
 
 runtime_test!(sleep_completes, {
     test_helpers::sleep_completes::<Timer>().await;
@@ -35,13 +35,21 @@ runtime_test!(timeout_far_away_is_large, {
 });
 
 runtime_test!(sleep_polls_pending_then_ready, {
-    let waker = Waker::noop();
-    let mut cx = Context::from_waker(waker);
     let mut fut = pin!(Timer::sleep(Duration::from_millis(50)));
 
-    assert!(fut.as_mut().poll(&mut cx).is_pending());
+    let is_pending = core::future::poll_fn(|cx| {
+        let result = fut.as_mut().poll(cx);
+        core::task::Poll::Ready(result.is_pending())
+    }).await;
+    assert!(is_pending, "first poll should be Pending");
+
     Timer::sleep(Duration::from_millis(60)).await;
-    assert!(fut.as_mut().poll(&mut cx).is_ready());
+
+    let is_ready = core::future::poll_fn(|cx| {
+        let result = fut.as_mut().poll(cx);
+        core::task::Poll::Ready(result.is_ready())
+    }).await;
+    assert!(is_ready, "should be Ready after waiting");
 });
 
 runtime_test!(sleep_until_past_deadline_completes_immediately, {
@@ -51,20 +59,30 @@ runtime_test!(sleep_until_past_deadline_completes_immediately, {
 });
 
 runtime_test!(sleep_until_future_deadline_completes, {
-    let deadline = Timer::now() + Duration::from_millis(20);
+    let deadline = Timer::deadline(Duration::from_millis(20));
     Timer::sleep_until(deadline).await;
     assert!(Timer::now() >= deadline);
 });
 
 runtime_test!(sleep_registers_waker_correctly, {
-    let waker = Waker::noop();
-    let mut cx = Context::from_waker(waker);
     let mut fut = pin!(Timer::sleep(Duration::from_millis(10)));
 
-    let _ = fut.as_mut().poll(&mut cx);
+    // First poll registers the waker
+    let is_pending = core::future::poll_fn(|cx| {
+        let result = fut.as_mut().poll(cx);
+        core::task::Poll::Ready(result.is_pending())
+    }).await;
+    assert!(is_pending);
+
+    // Wait for the sleep to expire
     Timer::sleep(Duration::from_millis(20)).await;
-    let result = fut.as_mut().poll(&mut cx);
-    assert!(result.is_ready());
+
+    // Should be ready now
+    let is_ready = core::future::poll_fn(|cx| {
+        let result = fut.as_mut().poll(cx);
+        core::task::Poll::Ready(result.is_ready())
+    }).await;
+    assert!(is_ready);
 });
 
 runtime_test!(now_returns_ordered_after_sleep, {
@@ -75,14 +93,14 @@ runtime_test!(now_returns_ordered_after_sleep, {
 });
 
 runtime_test!(timeout_deadline_into_sleep_completes, {
-    let deadline = Timer::now() + Duration::from_millis(20);
+    let deadline = Timer::deadline(Duration::from_millis(20));
     let timeout = Timeout::Deadline(deadline);
     timeout.into_sleep().await;
     assert!(Timer::now() >= deadline);
 });
 
 runtime_test!(timeout_from_instant, {
-    let instant = Timer::now() + Duration::from_millis(10);
+    let instant = Timer::deadline(Duration::from_millis(10));
     let timeout: Timeout = instant.into();
     assert!(matches!(timeout, Timeout::Deadline(_)));
     timeout.into_sleep().await;
@@ -95,14 +113,13 @@ runtime_test!(timeout_copy_produces_independent_sleeps, {
 });
 
 runtime_test!(shorter_sleep_wakes_before_longer, {
-    let start = Timer::now();
+    let max_deadline = Timer::deadline(Duration::from_millis(100));
     let short = Timer::sleep(Duration::from_millis(20));
     let long = Timer::sleep(Duration::from_millis(200));
 
     futures::future::select(pin!(short), pin!(long)).await;
 
-    let elapsed = Timer::now() - start;
-    assert!(elapsed < Duration::from_millis(100));
+    assert!(Timer::now() < max_deadline, "short sleep took too long");
 });
 
 runtime_test!(timer_survives_multiple_wakes_then_fires, {

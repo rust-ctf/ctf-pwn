@@ -37,7 +37,6 @@ pub mod timer;
 pub mod backend;
 
 #[cfg(test)]
-#[cfg(not(feature = "runtime-embassy"))]
 mod runtime_test;
 
 #[cfg(test)]

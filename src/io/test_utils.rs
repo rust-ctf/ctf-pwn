@@ -191,11 +191,13 @@ impl Write for MockStream {
     }
 }
 
-#[cfg(all(test, not(feature = "runtime-embassy")))]
+#[cfg(test)]
 mod tests {
+    use crate::io::runtime_test::runtime_test;
+
     use super::*;
 
-    async fn assert_sleep_then_data() {
+    runtime_test!(mock_reader_sleep_then_data, {
         let mut reader = MockReader::new(&[
             ReadAction::Sleep(Duration::from_millis(50)),
             ReadAction::Data(b"after_sleep".to_vec()),
@@ -213,9 +215,9 @@ mod tests {
             elapsed >= Duration::from_millis(40),
             "sleep should have delayed at least 40ms, got {elapsed:?}"
         );
-    }
+    });
 
-    async fn assert_sleep_duration_is_accurate() {
+    runtime_test!(mock_reader_sleep_duration_is_accurate, {
         let mut reader = MockReader::new(&[
             ReadAction::Sleep(Duration::from_millis(100)),
             ReadAction::Data(b"x".to_vec()),
@@ -235,9 +237,9 @@ mod tests {
             elapsed < Duration::from_millis(300),
             "sleep took too long: {elapsed:?}"
         );
-    }
+    });
 
-    async fn assert_multiple_sleeps_accumulate_time() {
+    runtime_test!(mock_reader_multiple_sleeps_accumulate, {
         let mut reader = MockReader::new(&[
             ReadAction::Data(b"a".to_vec()),
             ReadAction::Sleep(Duration::from_millis(30)),
@@ -260,9 +262,9 @@ mod tests {
             elapsed >= Duration::from_millis(50),
             "two 30ms sleeps should take at least 50ms, got {elapsed:?}"
         );
-    }
+    });
 
-    async fn assert_no_sleep_is_instant() {
+    runtime_test!(mock_reader_no_sleep_is_instant, {
         let mut reader = MockReader::new(&[ReadAction::Data(b"fast".to_vec())]);
         let mut buf = [0u8; 64];
 
@@ -277,9 +279,9 @@ mod tests {
             elapsed < Duration::from_millis(10),
             "data-only read should be near-instant, got {elapsed:?}"
         );
-    }
+    });
 
-    async fn assert_data_chunks_and_eof() {
+    runtime_test!(mock_reader_data_chunks_and_eof, {
         let mut reader = MockReader::new(&[
             ReadAction::Data(b"hello".to_vec()),
             ReadAction::Data(b"world".to_vec()),
@@ -300,9 +302,9 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(n, 0);
-    }
+    });
 
-    async fn assert_partial_when_buf_small() {
+    runtime_test!(mock_reader_partial_when_buf_small, {
         let mut reader = MockReader::new(&[ReadAction::Data(b"abcdef".to_vec())]);
         let mut buf = [0u8; 3];
 
@@ -315,59 +317,5 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(&buf[..n], b"def");
-    }
-
-    #[cfg(feature = "runtime-tokio")]
-    mod tokio_tests {
-        use super::*;
-
-        #[tokio::test]
-        async fn sleep_then_data() { assert_sleep_then_data().await; }
-        #[tokio::test]
-        async fn sleep_duration_is_accurate() { assert_sleep_duration_is_accurate().await; }
-        #[tokio::test]
-        async fn multiple_sleeps_accumulate() { assert_multiple_sleeps_accumulate_time().await; }
-        #[tokio::test]
-        async fn no_sleep_is_instant() { assert_no_sleep_is_instant().await; }
-        #[tokio::test]
-        async fn data_chunks_and_eof() { assert_data_chunks_and_eof().await; }
-        #[tokio::test]
-        async fn partial_when_buf_small() { assert_partial_when_buf_small().await; }
-    }
-
-    #[cfg(feature = "runtime-async-std")]
-    mod async_std_tests {
-        use super::*;
-
-        #[async_std::test]
-        async fn sleep_then_data() { assert_sleep_then_data().await; }
-        #[async_std::test]
-        async fn sleep_duration_is_accurate() { assert_sleep_duration_is_accurate().await; }
-        #[async_std::test]
-        async fn multiple_sleeps_accumulate() { assert_multiple_sleeps_accumulate_time().await; }
-        #[async_std::test]
-        async fn no_sleep_is_instant() { assert_no_sleep_is_instant().await; }
-        #[async_std::test]
-        async fn data_chunks_and_eof() { assert_data_chunks_and_eof().await; }
-        #[async_std::test]
-        async fn partial_when_buf_small() { assert_partial_when_buf_small().await; }
-    }
-
-    #[cfg(feature = "runtime-smol")]
-    mod smol_tests {
-        use super::*;
-
-        #[test]
-        fn sleep_then_data() { smol::block_on(assert_sleep_then_data()); }
-        #[test]
-        fn sleep_duration_is_accurate() { smol::block_on(assert_sleep_duration_is_accurate()); }
-        #[test]
-        fn multiple_sleeps_accumulate() { smol::block_on(assert_multiple_sleeps_accumulate_time()); }
-        #[test]
-        fn no_sleep_is_instant() { smol::block_on(assert_no_sleep_is_instant()); }
-        #[test]
-        fn data_chunks_and_eof() { smol::block_on(assert_data_chunks_and_eof()); }
-        #[test]
-        fn partial_when_buf_small() { smol::block_on(assert_partial_when_buf_small()); }
-    }
+    });
 }

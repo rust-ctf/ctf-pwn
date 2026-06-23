@@ -20,7 +20,6 @@ pub mod smol;
 pub mod embassy;
 
 #[cfg(test)]
-#[cfg(not(feature = "runtime-embassy"))]
 mod tests;
 
 /// The timer implementation for the selected runtime.
@@ -58,6 +57,9 @@ pub trait TimerProvider {
 
     /// Return the current instant.
     fn now() -> Self::Instant;
+
+    /// Compute an instant that is `duration` from now.
+    fn deadline(duration: Duration) -> Self::Instant;
 }
 
 /// The sleep future type for the selected runtime.
@@ -147,12 +149,10 @@ impl From<Instant> for Timeout {
 pub(crate) mod test_helpers {
     use super::*;
 
-    #[cfg(any(feature = "runtime-tokio", feature = "runtime-async-std", feature = "runtime-smol"))]
     pub(crate) async fn sleep_completes<T: TimerProvider>() {
         T::sleep(Duration::from_millis(10)).await;
     }
 
-    #[cfg(any(feature = "runtime-tokio", feature = "runtime-async-std", feature = "runtime-smol"))]
     pub(crate) async fn sleep_zero_completes<T: TimerProvider>() {
         T::sleep(Duration::ZERO).await;
     }
@@ -162,7 +162,6 @@ pub(crate) mod test_helpers {
         assert_unpin::<T::Sleep>();
     }
 
-    #[cfg(any(feature = "runtime-tokio", feature = "runtime-async-std", feature = "runtime-smol"))]
     pub(crate) fn now_is_monotonic<T: TimerProvider>() {
         let mut prev = T::now();
         for _ in 0..10 {
@@ -172,7 +171,6 @@ pub(crate) mod test_helpers {
         }
     }
 
-    #[cfg(any(feature = "runtime-tokio", feature = "runtime-async-std", feature = "runtime-smol"))]
     pub(crate) async fn timeout_delay_into_sleep_completes() {
         let timeout = Timeout::Delay(Duration::from_millis(10));
         timeout.into_sleep().await;

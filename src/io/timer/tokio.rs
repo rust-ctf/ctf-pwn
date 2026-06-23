@@ -24,5 +24,9 @@ impl TimerProvider for TokioTimer {
     fn now() -> Self::Instant {
         ::tokio::time::Instant::now()
     }
+
+    fn deadline(duration: Duration) -> Self::Instant {
+        Self::now() + duration
+    }
 }
 

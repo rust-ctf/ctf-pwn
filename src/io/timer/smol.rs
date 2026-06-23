@@ -28,5 +28,9 @@ impl TimerProvider for SmolTimer {
     fn now() -> Self::Instant {
         std::time::Instant::now()
     }
+
+    fn deadline(duration: Duration) -> Self::Instant {
+        Self::now() + duration
+    }
 }
 
