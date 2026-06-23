@@ -36,6 +36,9 @@ pub mod timer;
 /// I/O backends for bidirectional communication.
 pub mod backend;
 
+/// Buffered async reader with peek/restore capabilities.
+pub mod buffered;
+
 #[cfg(test)]
 mod runtime_test;
 

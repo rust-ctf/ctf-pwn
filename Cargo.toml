@@ -16,7 +16,7 @@ alloc = []
 runtime-tokio = ["std", "dep:tokio"]
 runtime-async-std = ["std", "dep:async-std", "dep:futures-timer", "dep:futures"]
 runtime-smol = ["std", "dep:smol", "dep:futures-timer", "dep:futures"]
-runtime-embassy = ["dep:embassy-time", "dep:embedded-io-async"]
+runtime-embassy = ["alloc", "dep:embassy-time", "dep:embedded-io-async"]
 regex = ["dep:regex"]
 tui = ["std", "dep:crossterm", "dep:ratatui"]
 
