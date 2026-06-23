@@ -2,7 +2,7 @@
 
 use core::time::Duration;
 
-use super::Timer;
+use super::TimerProvider;
 
 /// Timer implementation using [`futures_timer::Delay`].
 ///
@@ -11,7 +11,7 @@ use super::Timer;
 #[derive(Debug, Clone, Copy)]
 pub struct AsyncStdTimer;
 
-impl Timer for AsyncStdTimer {
+impl TimerProvider for AsyncStdTimer {
     type Sleep = futures_timer::Delay;
     type Instant = std::time::Instant;
 
@@ -37,8 +37,7 @@ mod tests {
     use core::task::{Context, Waker};
 
     use super::*;
-    use crate::io::timer::test_helpers;
-
+    use crate::io::timer::{Timeout, test_helpers};
 
     #[async_std::test]
     async fn sleep_completes() {
@@ -62,19 +61,18 @@ mod tests {
 
     #[async_std::test]
     async fn timeout_delay_into_sleep_completes() {
-        test_helpers::timeout_delay_into_sleep_completes::<AsyncStdTimer>().await;
+        test_helpers::timeout_delay_into_sleep_completes().await;
     }
 
     #[test]
     fn timeout_from_duration() {
-        test_helpers::timeout_from_duration::<AsyncStdTimer>();
+        test_helpers::timeout_from_duration();
     }
 
     #[test]
     fn timeout_far_away_is_large() {
-        test_helpers::timeout_far_away_is_large::<AsyncStdTimer>();
+        test_helpers::timeout_far_away_is_large();
     }
-
 
     #[async_std::test]
     async fn sleep_polls_pending_then_ready() {
@@ -102,11 +100,46 @@ mod tests {
     }
 
     #[async_std::test]
+    async fn sleep_registers_waker_correctly() {
+        let waker = Waker::noop();
+        let mut cx = Context::from_waker(waker);
+        let mut fut = pin!(AsyncStdTimer::sleep(Duration::from_millis(10)));
+
+        let _ = fut.as_mut().poll(&mut cx);
+        async_std::task::sleep(Duration::from_millis(20)).await;
+        let result = fut.as_mut().poll(&mut cx);
+        assert!(result.is_ready());
+    }
+
+    #[async_std::test]
     async fn now_returns_ordered_after_sleep() {
         let before = AsyncStdTimer::now();
         async_std::task::sleep(Duration::from_millis(10)).await;
         let after = AsyncStdTimer::now();
         assert!(after > before);
+    }
+
+    #[async_std::test]
+    async fn timeout_deadline_into_sleep_completes() {
+        let deadline = AsyncStdTimer::now() + Duration::from_millis(20);
+        let timeout = Timeout::Deadline(deadline);
+        timeout.into_sleep().await;
+        assert!(AsyncStdTimer::now() >= deadline);
+    }
+
+    #[async_std::test]
+    async fn timeout_from_instant() {
+        let instant = AsyncStdTimer::now() + Duration::from_millis(10);
+        let timeout: Timeout = instant.into();
+        assert!(matches!(timeout, Timeout::Deadline(_)));
+        timeout.into_sleep().await;
+    }
+
+    #[async_std::test]
+    async fn timeout_copy_produces_independent_sleeps() {
+        let timeout = Timeout::Delay(Duration::from_millis(10));
+        let timeout2 = timeout;
+        futures::join!(timeout.into_sleep(), timeout2.into_sleep());
     }
 
     #[async_std::test]
@@ -120,18 +153,6 @@ mod tests {
 
         let elapsed = AsyncStdTimer::now().duration_since(start);
         assert!(elapsed < Duration::from_millis(100));
-    }
-
-    #[async_std::test]
-    async fn sleep_registers_waker_correctly() {
-        let waker = Waker::noop();
-        let mut cx = Context::from_waker(waker);
-        let mut fut = pin!(AsyncStdTimer::sleep(Duration::from_millis(10)));
-
-        let _ = fut.as_mut().poll(&mut cx);
-        async_std::task::sleep(Duration::from_millis(20)).await;
-        let result = fut.as_mut().poll(&mut cx);
-        assert!(result.is_ready());
     }
 
     #[async_std::test]

@@ -58,7 +58,7 @@ async-std = { version = "1.13", features = ["attributes"] }
 smol = "2.0"
 futures = "0.3"
 futures-timer = "3.0"
-embassy-time = { version = "0.4", features = ["mock-driver"] }
+embassy-time = { version = "0.4", features = ["std"] }
 embassy-executor = { version = "0.7", features = ["arch-std", "executor-thread"] }
 embassy-futures = "0.1"
 critical-section = { version = "1.2", features = ["std"] }

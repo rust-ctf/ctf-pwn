@@ -3,13 +3,13 @@
 use core::pin::Pin;
 use core::time::Duration;
 
-use super::{Timeout, Timer};
+use super::TimerProvider;
 
 /// Timer implementation backed by [`tokio::time`].
 #[derive(Debug, Clone, Copy)]
 pub struct TokioTimer;
 
-impl Timer for TokioTimer {
+impl TimerProvider for TokioTimer {
     type Sleep = Pin<Box<::tokio::time::Sleep>>;
     type Instant = ::tokio::time::Instant;
 
@@ -26,12 +26,6 @@ impl Timer for TokioTimer {
     }
 }
 
-impl From<::tokio::time::Instant> for Timeout<TokioTimer> {
-    fn from(instant: ::tokio::time::Instant) -> Self {
-        Self::Deadline(instant)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use core::future::Future;
@@ -39,8 +33,7 @@ mod tests {
     use core::task::{Context, Waker};
 
     use super::*;
-    use crate::io::timer::test_helpers;
-
+    use crate::io::timer::{Timeout, test_helpers};
 
     #[tokio::test]
     async fn sleep_completes() {
@@ -64,19 +57,18 @@ mod tests {
 
     #[tokio::test]
     async fn timeout_delay_into_sleep_completes() {
-        test_helpers::timeout_delay_into_sleep_completes::<TokioTimer>().await;
+        test_helpers::timeout_delay_into_sleep_completes().await;
     }
 
     #[test]
     fn timeout_from_duration() {
-        test_helpers::timeout_from_duration::<TokioTimer>();
+        test_helpers::timeout_from_duration();
     }
 
     #[test]
     fn timeout_far_away_is_large() {
-        test_helpers::timeout_far_away_is_large::<TokioTimer>();
+        test_helpers::timeout_far_away_is_large();
     }
-
 
     #[tokio::test]
     async fn sleep_polls_pending_then_ready() {
@@ -104,6 +96,19 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn sleep_registers_waker_correctly() {
+        let waker = Waker::noop();
+        let mut cx = Context::from_waker(waker);
+        let mut fut: core::pin::Pin<Box<_>> = TokioTimer::sleep(Duration::from_millis(10));
+
+        let _ = core::pin::Pin::new(&mut fut).poll(&mut cx);
+
+        ::tokio::time::sleep(Duration::from_millis(20)).await;
+        let result = core::pin::Pin::new(&mut fut).poll(&mut cx);
+        assert!(result.is_ready());
+    }
+
+    #[tokio::test]
     async fn now_returns_ordered_after_sleep() {
         let before = TokioTimer::now();
         ::tokio::time::sleep(Duration::from_millis(10)).await;
@@ -114,7 +119,7 @@ mod tests {
     #[tokio::test]
     async fn timeout_deadline_into_sleep_completes() {
         let deadline = TokioTimer::now() + Duration::from_millis(20);
-        let timeout: Timeout<TokioTimer> = Timeout::Deadline(deadline);
+        let timeout = Timeout::Deadline(deadline);
         timeout.into_sleep().await;
         assert!(TokioTimer::now() >= deadline);
     }
@@ -122,9 +127,16 @@ mod tests {
     #[tokio::test]
     async fn timeout_from_instant() {
         let instant = TokioTimer::now() + Duration::from_millis(10);
-        let timeout: Timeout<TokioTimer> = instant.into();
+        let timeout = instant.into();
         assert!(matches!(timeout, Timeout::Deadline(_)));
         timeout.into_sleep().await;
+    }
+
+    #[tokio::test]
+    async fn timeout_copy_produces_independent_sleeps() {
+        let timeout = Timeout::Delay(Duration::from_millis(10));
+        let timeout2 = timeout;
+        let ((), ()) = ::tokio::join!(timeout.into_sleep(), timeout2.into_sleep());
     }
 
     #[tokio::test]
@@ -141,26 +153,6 @@ mod tests {
 
         let elapsed = TokioTimer::now().duration_since(start);
         assert!(elapsed < Duration::from_millis(100));
-    }
-
-    #[tokio::test]
-    async fn sleep_registers_waker_correctly() {
-        let waker = Waker::noop();
-        let mut cx = Context::from_waker(waker);
-        let mut fut: core::pin::Pin<Box<_>> = TokioTimer::sleep(Duration::from_millis(10));
-
-        let _ = core::pin::Pin::new(&mut fut).poll(&mut cx);
-
-        ::tokio::time::sleep(Duration::from_millis(20)).await;
-        let result = core::pin::Pin::new(&mut fut).poll(&mut cx);
-        assert!(result.is_ready());
-    }
-
-    #[tokio::test]
-    async fn timeout_copy_produces_independent_sleeps() {
-        let timeout: Timeout<TokioTimer> = Timeout::Delay(Duration::from_millis(10));
-        let timeout2 = timeout;
-        let ((), ()) = ::tokio::join!(timeout.into_sleep(), timeout2.into_sleep());
     }
 
     #[tokio::test]

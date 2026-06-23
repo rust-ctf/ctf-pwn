@@ -2,7 +2,7 @@
 
 use core::time::Duration;
 
-use super::Timer;
+use super::TimerProvider;
 
 /// Timer implementation using [`futures_timer::Delay`].
 ///
@@ -11,7 +11,7 @@ use super::Timer;
 #[derive(Debug, Clone, Copy)]
 pub struct SmolTimer;
 
-impl Timer for SmolTimer {
+impl TimerProvider for SmolTimer {
     type Sleep = futures_timer::Delay;
     type Instant = std::time::Instant;
 
@@ -62,17 +62,17 @@ mod tests {
 
     #[test]
     fn timeout_delay_into_sleep_completes() {
-        smol::block_on(test_helpers::timeout_delay_into_sleep_completes::<SmolTimer>());
+        smol::block_on(test_helpers::timeout_delay_into_sleep_completes());
     }
 
     #[test]
     fn timeout_from_duration() {
-        test_helpers::timeout_from_duration::<SmolTimer>();
+        test_helpers::timeout_from_duration();
     }
 
     #[test]
     fn timeout_far_away_is_large() {
-        test_helpers::timeout_far_away_is_large::<SmolTimer>();
+        test_helpers::timeout_far_away_is_large();
     }
 
     #[test]
@@ -107,12 +107,55 @@ mod tests {
     }
 
     #[test]
+    fn sleep_registers_waker_correctly() {
+        smol::block_on(async {
+            let waker = Waker::noop();
+            let mut cx = Context::from_waker(waker);
+            let mut fut = pin!(SmolTimer::sleep(Duration::from_millis(10)));
+
+            let _ = fut.as_mut().poll(&mut cx);
+            smol::Timer::after(Duration::from_millis(20)).await;
+            let result = fut.as_mut().poll(&mut cx);
+            assert!(result.is_ready());
+        });
+    }
+
+    #[test]
     fn now_returns_ordered_after_sleep() {
         smol::block_on(async {
             let before = SmolTimer::now();
             smol::Timer::after(Duration::from_millis(10)).await;
             let after = SmolTimer::now();
             assert!(after > before);
+        });
+    }
+
+    #[test]
+    fn timeout_deadline_into_sleep_completes() {
+        smol::block_on(async {
+            let deadline = SmolTimer::now() + Duration::from_millis(20);
+            let timeout = Timeout::Deadline(deadline);
+            timeout.into_sleep().await;
+            assert!(SmolTimer::now() >= deadline);
+        });
+    }
+
+    #[test]
+    fn timeout_from_instant() {
+        smol::block_on(async {
+            let deadline = SmolTimer::now() + Duration::from_millis(10);
+            let timeout: Timeout = deadline.into();
+            assert!(matches!(timeout, Timeout::Deadline(_)));
+            timeout.into_sleep().await;
+        });
+    }
+
+    #[test]
+    fn timeout_copy_produces_independent_sleeps() {
+        smol::block_on(async {
+            let timeout = Timeout::Delay(Duration::from_millis(10));
+            let timeout2 = timeout;
+            futures::join!(timeout.into_sleep(), timeout2.into_sleep());
         });
     }
 
@@ -168,16 +211,6 @@ mod tests {
                 count >= 3,
                 "expected at least 3 iterations before timeout, got {count}"
             );
-        });
-    }
-
-    #[test]
-    fn timeout_from_instant() {
-        smol::block_on(async {
-            let deadline = SmolTimer::now() + Duration::from_millis(10);
-            let timeout: Timeout<SmolTimer> = Timeout::Deadline(deadline);
-            timeout.into_sleep().await;
-            assert!(SmolTimer::now() >= deadline);
         });
     }
 }
