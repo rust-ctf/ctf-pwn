@@ -39,6 +39,9 @@ pub mod backend;
 /// Buffered async reader with peek/restore capabilities.
 pub mod buffered;
 
+/// Timeout wrappers for async I/O operations.
+pub mod timeout;
+
 #[cfg(test)]
 mod runtime_test;
 
