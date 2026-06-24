@@ -42,6 +42,9 @@ pub mod buffered;
 /// Timeout wrappers for async I/O operations.
 pub mod timeout;
 
+/// Extension traits for ergonomic async I/O.
+pub mod ext;
+
 #[cfg(test)]
 mod runtime_test;
 
